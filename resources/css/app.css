@@ -1,0 +1,117 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+}
+
+@layer base {
+    :root {
+        --theme-primary: #c05b7b;
+        --theme-secondary: #fce7ef;
+    }
+
+    body {
+        @apply font-sans antialiased;
+    }
+
+    .site-bg {
+        background:
+            radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--theme-secondary) 82%, white), #fff 38%),
+            linear-gradient(180deg, #fff7fa 0%, #ffffff 42%, #fff9fc 100%);
+    }
+
+    .admin-bg {
+        background: linear-gradient(180deg, #f8fafc, #eef2ff);
+    }
+
+    a {
+        @apply transition;
+    }
+}
+
+@layer components {
+    .container {
+        @apply max-w-7xl;
+    }
+
+    .btn-primary {
+        background-color: var(--theme-primary);
+        @apply inline-flex items-center justify-center rounded-xl px-5 py-2.5 font-semibold text-white hover:opacity-90;
+    }
+
+    .btn-secondary {
+        border-color: color-mix(in srgb, var(--theme-primary) 35%, white);
+        color: color-mix(in srgb, var(--theme-primary) 70%, black);
+        @apply inline-flex items-center justify-center rounded-xl border bg-white px-4 py-2 font-medium hover:bg-rose-50;
+    }
+
+    .btn-danger {
+        @apply inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700;
+    }
+
+    .card-premium {
+        border-color: color-mix(in srgb, var(--theme-primary) 20%, white);
+        box-shadow: 0 12px 30px color-mix(in srgb, var(--theme-primary) 14%, transparent);
+        @apply rounded-2xl border bg-white/90 p-6;
+    }
+
+    .field {
+        @apply grid gap-1 text-sm;
+    }
+
+    .field > span {
+        @apply text-slate-700;
+    }
+
+    .field input,
+    .field select,
+    .field textarea,
+    .input {
+        @apply rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100;
+    }
+
+    .admin-card {
+        @apply rounded-2xl border border-slate-200 bg-white p-4 shadow-sm;
+    }
+
+    .admin-card h2 {
+        @apply mt-2 text-2xl font-semibold text-slate-900;
+    }
+
+    .admin-link {
+        @apply block rounded-lg px-3 py-2 hover:bg-slate-800;
+    }
+
+    .table-admin {
+        @apply w-full min-w-[720px] text-sm;
+    }
+
+    .table-admin thead {
+        @apply bg-slate-100 text-left;
+    }
+
+    .table-admin th,
+    .table-admin td {
+        @apply px-3 py-2 border-b border-slate-200 align-top;
+    }
+
+    .chip {
+        @apply rounded-full border border-rose-300 px-4 py-2 text-sm;
+    }
+
+    .chip-active {
+        background-color: var(--theme-primary);
+        border-color: var(--theme-primary);
+        @apply text-white;
+    }
+
+    .addon-item {
+        @apply flex items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm;
+    }
+}
