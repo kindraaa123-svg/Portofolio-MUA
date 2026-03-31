@@ -9,6 +9,7 @@ use App\Models\Booking;
 use App\Models\BookingPayment;
 use App\Models\BookingStatusLog;
 use App\Support\ActivityLogger;
+use App\Support\FonnteWhatsApp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -35,6 +36,32 @@ class BookingController extends Controller
             'search' => $search,
             'slots' => AvailabilitySlot::orderBy('day_of_week')->orderBy('start_time')->get(),
             'blockedSchedules' => BlockedSchedule::latest('blocked_date')->take(20)->get(),
+        ]);
+    }
+
+    public function paymentValidations(Request $request)
+    {
+        $status = $request->string('status')->toString();
+        $search = $request->string('q')->toString();
+
+        $payments = BookingPayment::with(['booking.customer'])
+            ->where('payment_type', 'dp')
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($search, function ($q) use ($search) {
+                $q->where('payer_name', 'like', "%{$search}%")
+                    ->orWhereHas('booking', function ($b) use ($search) {
+                        $b->where('booking_code', 'like', "%{$search}%")
+                            ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%"));
+                    });
+            })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.bookings.payment-validations', [
+            'payments' => $payments,
+            'status' => $status,
+            'search' => $search,
         ]);
     }
 
@@ -79,19 +106,22 @@ class BookingController extends Controller
 
     public function verifyPayment(Request $request, BookingPayment $payment): RedirectResponse
     {
+        if ($payment->status !== 'pending') {
+            return back()->withErrors(['status' => 'Status pembayaran ini sudah final dan tidak bisa diubah lagi.']);
+        }
+
         $validated = $request->validate([
             'status' => ['required', 'in:verified,rejected'],
-            'note' => ['nullable', 'string'],
         ]);
 
         $payment->update([
             'status' => $validated['status'],
-            'note' => $validated['note'] ?? null,
             'verified_by' => auth()->id(),
             'verified_at' => now(),
         ]);
 
         $booking = $payment->booking;
+        $shouldSendApprovedWhatsApp = false;
 
         if ($validated['status'] === 'verified' && $payment->payment_type === 'dp') {
             $oldStatus = $booking->status;
@@ -100,6 +130,8 @@ class BookingController extends Controller
                 'status' => $booking->status === 'pending' ? 'confirmed' : $booking->status,
                 'handled_by' => auth()->id(),
             ]);
+
+            $shouldSendApprovedWhatsApp = $oldStatus !== 'confirmed' && $booking->status === 'confirmed';
 
             BookingStatusLog::create([
                 'booking_id' => $booking->id,
@@ -122,6 +154,10 @@ class BookingController extends Controller
             'payment_id' => $payment->id,
             'status' => $payment->status,
         ]);
+
+        if ($shouldSendApprovedWhatsApp) {
+            app(FonnteWhatsApp::class)->sendReservationApproved($booking);
+        }
 
         return back()->with('success', 'Verifikasi pembayaran berhasil disimpan.');
     }
@@ -161,6 +197,10 @@ class BookingController extends Controller
             'new_status' => $booking->status,
             'payment_status' => $booking->payment_status,
         ]);
+
+        if ($oldStatus !== 'confirmed' && $booking->status === 'confirmed') {
+            app(FonnteWhatsApp::class)->sendReservationApproved($booking);
+        }
 
         return back()->with('success', 'Status reservasi diperbarui.');
     }

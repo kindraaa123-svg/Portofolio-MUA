@@ -17,8 +17,8 @@
 </form>
 
 <div class="card-premium bg-white overflow-x-auto">
-    <table class="table-admin min-w-[1200px]">
-        <thead><tr><th>Tanggal/Jam</th><th>User</th><th>Level</th><th>Module</th><th>Action</th><th>IP</th><th>Lokasi</th><th>Latitude</th><th>Longitude</th></tr></thead>
+    <table class="table-admin min-w-[1400px]">
+        <thead><tr><th>Tanggal/Jam</th><th>User</th><th>Level</th><th>Module</th><th>Action</th><th>Detail Aktivitas</th><th>IP</th><th>Lokasi</th><th>Latitude</th><th>Longitude</th></tr></thead>
         <tbody>
         @forelse($logs as $log)
             <tr>
@@ -27,13 +27,14 @@
                 <td>{{ $log->user_level ?: ($log->user?->role?->name ?? '-') }}</td>
                 <td>{{ $log->module }}</td>
                 <td>{{ $log->action }}</td>
+                <td>{{ $log->description() }}</td>
                 <td>{{ $log->ip_address }}</td>
                 <td>{{ $log->geo_location ?: '-' }}</td>
                 <td>{{ $log->latitude ?: '-' }}</td>
                 <td>{{ $log->longitude ?: '-' }}</td>
             </tr>
         @empty
-            <tr><td colspan="9">Belum ada log aktivitas.</td></tr>
+            <tr><td colspan="10">Belum ada log aktivitas.</td></tr>
         @endforelse
         </tbody>
     </table>

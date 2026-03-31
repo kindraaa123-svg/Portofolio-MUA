@@ -3,12 +3,24 @@
 @section('content')
 <div class="flex flex-wrap gap-3 justify-between items-center mb-6">
     <h1 class="text-2xl font-semibold">Kelola Portfolio</h1>
-    <a class="btn-primary" href="{{ route('admin.portfolios.create') }}">Tambah Portfolio</a>
+    <div class="flex flex-wrap items-center gap-2">
+        <a class="btn-secondary text-xs" href="{{ route('admin.portfolios.export-xlsx') }}">Export Excel (.xlsx)</a>
+        <form method="POST" action="{{ route('admin.portfolios.import-xlsx') }}" enctype="multipart/form-data" class="flex items-center gap-2">
+            @csrf
+            <input type="file" name="xlsx_file" accept=".xlsx" class="input text-xs" required>
+            <button type="submit" class="btn-primary text-xs">Import Excel</button>
+        </form>
+        <a class="btn-primary" href="{{ route('admin.portfolios.create') }}">Tambah Portfolio</a>
+    </div>
 </div>
 
 <form class="mb-4" method="GET">
     <input class="input" type="text" name="q" value="{{ $search }}" placeholder="Cari judul portfolio...">
 </form>
+
+<p class="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+    Format import: <strong>title</strong> (wajib), lalu opsional: slug, category, summary, description, work_date (YYYY-MM-DD), client_name, is_published (1/0), cover_image_path.
+</p>
 
 <div class="card-premium bg-white overflow-x-auto">
     <table class="table-admin">

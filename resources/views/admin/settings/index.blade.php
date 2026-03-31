@@ -65,19 +65,69 @@
         <section class="card-premium bg-white space-y-4">
             <div class="pb-3 border-b border-slate-200">
                 <h2 class="font-semibold text-lg">Warna Website</h2>
+                <p class="mt-1 text-xs text-slate-500">Warna ini juga dipakai untuk tema sidebar admin.</p>
             </div>
 
             <label class="field">
-                <span>Warna Utama</span>
-                <input type="color" name="theme_primary" value="{{ old('theme_primary', $setting?->theme_primary ?? '#c05b7b') }}">
+                <span>Warna Utama (Sidebar & Tombol)</span>
+                <div class="flex items-center gap-3">
+                    <input type="color" name="theme_primary" id="theme-primary-input" value="{{ old('theme_primary', $setting?->theme_primary ?? '#c05b7b') }}">
+                    <span id="theme-primary-hex" class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700"></span>
+                </div>
             </label>
             <label class="field">
-                <span>Warna Pendukung</span>
-                <input type="color" name="theme_secondary" value="{{ old('theme_secondary', $setting?->theme_secondary ?? '#fce7ef') }}">
+                <span>Warna Pendukung (Hover Sidebar)</span>
+                <div class="flex items-center gap-3">
+                    <input type="color" name="theme_secondary" id="theme-secondary-input" value="{{ old('theme_secondary', $setting?->theme_secondary ?? '#fce7ef') }}">
+                    <span id="theme-secondary-hex" class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700"></span>
+                </div>
             </label>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p class="text-xs text-slate-600">Preview Warna Sidebar</p>
+                <div id="sidebar-theme-preview" class="mt-2 h-14 rounded-lg border border-white/35"></div>
+            </div>
 
             <button class="btn-primary w-full" type="submit">Simpan Pengaturan</button>
         </section>
     </div>
 </form>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const primaryInput = document.getElementById('theme-primary-input');
+    const secondaryInput = document.getElementById('theme-secondary-input');
+    const primaryHex = document.getElementById('theme-primary-hex');
+    const secondaryHex = document.getElementById('theme-secondary-hex');
+    const preview = document.getElementById('sidebar-theme-preview');
+    const adminSidebar = document.getElementById('admin-sidebar');
+
+    if (!primaryInput || !secondaryInput || !primaryHex || !secondaryHex || !preview) {
+        return;
+    }
+
+    const applyThemePreview = () => {
+        const primary = (primaryInput.value || '#c05b7b').toUpperCase();
+        const secondary = (secondaryInput.value || '#fce7ef').toUpperCase();
+
+        primaryHex.textContent = primary;
+        secondaryHex.textContent = secondary;
+
+        document.documentElement.style.setProperty('--theme-primary', primary);
+        document.documentElement.style.setProperty('--theme-secondary', secondary);
+
+        preview.style.backgroundColor = primary;
+        preview.style.backgroundImage = 'linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12))';
+
+        if (adminSidebar) {
+            adminSidebar.style.backgroundColor = primary;
+            adminSidebar.style.backgroundImage = 'linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12))';
+        }
+    };
+
+    primaryInput.addEventListener('input', applyThemePreview);
+    primaryInput.addEventListener('change', applyThemePreview);
+    secondaryInput.addEventListener('input', applyThemePreview);
+    secondaryInput.addEventListener('change', applyThemePreview);
+    applyThemePreview();
+});
+</script>
 @endsection

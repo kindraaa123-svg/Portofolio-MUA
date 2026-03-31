@@ -2,8 +2,8 @@
 @section('title', 'Galeri Makeup')
 @section('content')
 <section class="container mx-auto px-4 py-16">
-    <h1 class="font-serif text-4xl text-rose-900 mb-3">Galeri Foto Makeup</h1>
-    <p class="text-rose-900/80 mb-8">Kumpulan detail hasil makeup dari berbagai look dan karakter acara.</p>
+    <h1 class="font-serif text-4xl text-black mb-3">Galeri Foto Makeup</h1>
+    <p class="text-black mb-8">Kumpulan detail hasil makeup dari berbagai look dan karakter acara.</p>
 
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         @forelse($images as $image)

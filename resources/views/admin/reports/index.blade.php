@@ -1,11 +1,37 @@
 @extends('layouts.admin')
 @section('title', 'Laporan')
 @section('content')
-<h1 class="text-2xl font-semibold mb-6">Laporan</h1>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <h1 class="text-2xl font-semibold">Laporan</h1>
+    <div class="flex flex-wrap gap-2">
+        <a class="btn-secondary" href="{{ route('admin.reports.export-pdf', request()->query()) }}" target="_blank">Export PDF</a>
+        <a class="btn-secondary" href="{{ route('admin.reports.export-excel', request()->query()) }}">Export Excel</a>
+        <a class="btn-secondary" href="{{ route('admin.reports.print', request()->query()) }}" target="_blank">Print</a>
+    </div>
+</div>
 
-<form method="GET" class="grid md:grid-cols-3 gap-3 mb-6">
+<form method="GET" class="grid md:grid-cols-5 gap-3 mb-6">
     <label class="field"><span>Dari Tanggal</span><input type="date" class="input" name="from" value="{{ $from }}"></label>
     <label class="field"><span>Sampai Tanggal</span><input type="date" class="input" name="to" value="{{ $to }}"></label>
+    <label class="field"><span>Keyword</span><input type="text" class="input" name="q" value="{{ $keyword }}" placeholder="Kode booking / customer"></label>
+    <label class="field">
+        <span>Status Booking</span>
+        <select class="input" name="status">
+            <option value="">Semua</option>
+            @foreach($statusOptions as $statusOption)
+                <option value="{{ $statusOption }}" @selected($status === $statusOption)>{{ $statusOption }}</option>
+            @endforeach
+        </select>
+    </label>
+    <label class="field">
+        <span>Status Pembayaran</span>
+        <select class="input" name="payment_status">
+            <option value="">Semua</option>
+            @foreach($paymentStatusOptions as $paymentStatusOption)
+                <option value="{{ $paymentStatusOption }}" @selected($paymentStatus === $paymentStatusOption)>{{ $paymentStatusOption }}</option>
+            @endforeach
+        </select>
+    </label>
     <button class="btn-primary self-end">Filter</button>
 </form>
 

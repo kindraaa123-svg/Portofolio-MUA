@@ -18,46 +18,107 @@
                     @endforeach
                 </select>
             </label>
-            <label class="field"><span>Password</span><input type="password" name="password" required></label>
+            <p class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                Password user otomatis default: <strong>12345</strong>
+            </p>
             <button class="btn-primary">Simpan User</button>
         </form>
     </section>
 
     <section class="card-premium bg-white xl:col-span-2 overflow-x-auto">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 class="font-semibold">Import / Export User (.xlsx)</h2>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('admin.users.export-xlsx') }}" class="btn-secondary text-xs">Export Excel (.xlsx)</a>
+                <form method="POST" action="{{ route('admin.users.import-xlsx') }}" enctype="multipart/form-data" class="flex items-center gap-2">
+                    @csrf
+                    <input type="file" name="xlsx_file" accept=".xlsx" class="input text-xs" required>
+                    <button type="submit" class="btn-primary text-xs">Import Excel</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="mb-4 flex flex-wrap items-end gap-3">
+            <div class="field min-w-[220px] flex-1">
+                <span>Cari User</span>
+                <input id="user-search" type="text" placeholder="Cari nama, email, atau phone">
+            </div>
+            <div class="field min-w-[220px]">
+                <span>Filter Role</span>
+                <select id="role-filter">
+                    <option value="">Semua Role</option>
+                    @foreach($roles as $role)
+                        <option value="{{ $role->id }}">{{ $role->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
         <h2 class="font-semibold mb-3">Daftar User</h2>
         <table class="table-admin">
             <thead><tr><th>Nama</th><th>Email</th><th>Level</th><th>Status</th><th>Aksi</th></tr></thead>
-            <tbody>
-            @foreach($users as $user)
-                <tr>
-                    <td>{{ $user->name }}</td>
-                    <td>{{ $user->email }}<br><small>{{ $user->phone }}</small></td>
-                    <td>{{ $user->role?->name ?? '-' }}</td>
-                    <td>
-                        <span class="rounded-full px-2 py-1 text-xs {{ $user->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">
-                            {{ $user->is_active ? 'Aktif' : 'Nonaktif' }}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="space-y-2 min-w-[220px]">
-                            <form method="POST" action="{{ route('admin.users.reset-password', $user) }}">
-                                @csrf
-                                <button class="btn-secondary text-xs w-full">Reset Password (12345)</button>
-                            </form>
-
-                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Hapus akun ini?')">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn-danger w-full">Hapus</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-            @endforeach
-            </tbody>
+            <tbody id="users-table-body">@include('admin.users.partials.table-rows', ['users' => $users])</tbody>
         </table>
+        <div id="users-pagination" class="mt-4">{{ $users->links() }}</div>
     </section>
 </div>
 
-<div>{{ $users->links() }}</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('user-search');
+    const roleFilter = document.getElementById('role-filter');
+    const tableBody = document.getElementById('users-table-body');
+    const pagination = document.getElementById('users-pagination');
+    const endpoint = "{{ route('admin.users.list') }}";
+    let debounceTimer = null;
+
+    if (!searchInput || !roleFilter || !tableBody || !pagination) {
+        return;
+    }
+
+    const renderUsers = async (pageUrl = null) => {
+        const url = new URL(pageUrl || endpoint, window.location.origin);
+        if (!pageUrl) {
+            const search = searchInput.value.trim();
+            const roleId = roleFilter.value;
+            if (search) {
+                url.searchParams.set('search', search);
+            }
+            if (roleId) {
+                url.searchParams.set('role_id', roleId);
+            }
+        }
+
+        try {
+            const response = await fetch(url.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            });
+
+            if (!response.ok) return;
+            const data = await response.json();
+            tableBody.innerHTML = data.rows ?? '';
+            pagination.innerHTML = data.pagination ?? '';
+        } catch (e) {
+            // noop
+        }
+    };
+
+    const debouncedRender = () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => renderUsers(), 300);
+    };
+
+    searchInput.addEventListener('input', debouncedRender);
+    roleFilter.addEventListener('change', () => renderUsers());
+
+    pagination.addEventListener('click', (event) => {
+        const link = event.target.closest('a');
+        if (!link) return;
+        event.preventDefault();
+        renderUsers(link.href);
+    });
+});
+</script>
 @endsection

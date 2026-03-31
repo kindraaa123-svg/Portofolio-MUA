@@ -19,7 +19,6 @@ class BookingPayment extends Model
         'paid_at',
         'proof_image',
         'status',
-        'note',
         'verified_by',
         'verified_at',
     ];

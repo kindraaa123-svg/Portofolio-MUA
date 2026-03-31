@@ -1,7 +1,9 @@
 @extends('layouts.admin')
 @section('title', 'Kelola Daftar Harga')
 @section('content')
-<h1 class="text-2xl font-semibold mb-6">Kelola Daftar Harga Layanan dan Add-on</h1>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <h1 class="text-2xl font-semibold">Kelola Daftar Harga Layanan dan Add-on</h1>
+</div>
 
 <div class="grid lg:grid-cols-2 gap-6">
     <section class="card-premium bg-white">
@@ -32,11 +34,34 @@
 </div>
 
 <div class="mt-8 card-premium bg-white overflow-x-auto">
-    <h2 class="font-semibold text-lg mb-3">Daftar Layanan</h2>
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 class="font-semibold text-lg">Daftar Layanan</h2>
+        <div class="flex flex-wrap items-center gap-2">
+            <a class="btn-secondary text-xs" href="{{ route('admin.services.export-services-xlsx') }}">Export Layanan (.xlsx)</a>
+            <form method="POST" action="{{ route('admin.services.import-services-xlsx') }}" enctype="multipart/form-data" class="flex items-center gap-2">
+                @csrf
+                <input type="file" name="xlsx_file" accept=".xlsx" required class="input text-xs max-w-[220px]">
+                <button type="submit" class="btn-secondary text-xs">Import Layanan (.xlsx)</button>
+            </form>
+        </div>
+    </div>
     <table class="table-admin">
         <thead><tr><th>Nama</th><th>Kategori</th><th>Harga</th><th>Durasi</th><th>Aksi</th></tr></thead>
         <tbody>
             @foreach ($services as $item)
+                @php
+                    $servicePayload = [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'service_category_id' => $item->service_category_id,
+                        'description' => $item->description,
+                        'duration_minutes' => $item->duration_minutes,
+                        'price' => (float) $item->price,
+                        'home_service_fee' => (float) $item->home_service_fee,
+                        'is_home_service_available' => (bool) $item->is_home_service_available,
+                        'is_active' => (bool) $item->is_active,
+                    ];
+                @endphp
                 <tr>
                     <td>{{ $item->name }}</td>
                     <td>{{ $item->category?->name ?? '-' }}</td>
@@ -46,17 +71,7 @@
                         <button
                             type="button"
                             class="btn-secondary text-xs"
-                            onclick='bukaModalLayanan(@json([
-                                "id" => $item->id,
-                                "name" => $item->name,
-                                "service_category_id" => $item->service_category_id,
-                                "description" => $item->description,
-                                "duration_minutes" => $item->duration_minutes,
-                                "price" => (float) $item->price,
-                                "home_service_fee" => (float) $item->home_service_fee,
-                                "is_home_service_available" => (bool) $item->is_home_service_available,
-                                "is_active" => (bool) $item->is_active,
-                            ]))'
+                            onclick='bukaModalLayanan(@json($servicePayload))'
                         >Kelola</button>
                     </td>
                 </tr>
@@ -67,11 +82,30 @@
 </div>
 
 <div class="mt-8 card-premium bg-white overflow-x-auto">
-    <h2 class="font-semibold text-lg mb-3">Daftar Add-on</h2>
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 class="font-semibold text-lg">Daftar Add-on</h2>
+        <div class="flex flex-wrap items-center gap-2">
+            <a class="btn-secondary text-xs" href="{{ route('admin.services.export-addons-xlsx') }}">Export Add-on (.xlsx)</a>
+            <form method="POST" action="{{ route('admin.services.import-addons-xlsx') }}" enctype="multipart/form-data" class="flex items-center gap-2">
+                @csrf
+                <input type="file" name="xlsx_file" accept=".xlsx" required class="input text-xs max-w-[220px]">
+                <button type="submit" class="btn-secondary text-xs">Import Add-on (.xlsx)</button>
+            </form>
+        </div>
+    </div>
     <table class="table-admin">
         <thead><tr><th>Nama</th><th>Harga</th><th>Aksi</th></tr></thead>
         <tbody>
             @foreach($addons as $item)
+                @php
+                    $addonPayload = [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'description' => $item->description,
+                        'price' => (float) $item->price,
+                        'is_active' => (bool) $item->is_active,
+                    ];
+                @endphp
                 <tr>
                     <td>{{ $item->name }}</td>
                     <td>Rp {{ number_format($item->price, 0, ',', '.') }}</td>
@@ -79,13 +113,7 @@
                         <button
                             type="button"
                             class="btn-secondary text-xs"
-                            onclick='bukaModalAddon(@json([
-                                "id" => $item->id,
-                                "name" => $item->name,
-                                "description" => $item->description,
-                                "price" => (float) $item->price,
-                                "is_active" => (bool) $item->is_active,
-                            ]))'
+                            onclick='bukaModalAddon(@json($addonPayload))'
                         >Kelola</button>
                     </td>
                 </tr>

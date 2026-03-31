@@ -9,29 +9,49 @@
             --theme-primary: {{ $globalSetting->theme_primary ?? '#c05b7b' }};
             --theme-secondary: {{ $globalSetting->theme_secondary ?? '#fce7ef' }};
         }
+
+        .admin-sidebar {
+            background-color: var(--theme-primary) !important;
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12)) !important;
+        }
+
+        /* Force hover sidebar to always use selected secondary color */
+        .admin-sidebar .admin-link:hover,
+        .admin-sidebar .admin-link:focus-visible,
+        .admin-sidebar .admin-link-active {
+            background-color: var(--theme-secondary) !important;
+            border-color: var(--theme-secondary) !important;
+            box-shadow: inset 4px 0 0 var(--theme-primary), 0 8px 16px rgba(2, 6, 23, 0.18);
+            transform: translateX(2px);
+        }
     </style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="admin-bg min-h-screen text-slate-800">
 <div class="min-h-screen grid lg:grid-cols-[300px_1fr]">
-    <aside class="bg-slate-950 text-white p-6 space-y-6">
+    <aside
+        id="admin-sidebar"
+        class="admin-sidebar text-white p-6 space-y-6"
+        style="background-color: {{ $globalSetting->theme_primary ?? '#c05b7b' }}; background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12));"
+    >
         <a href="{{ route('admin.dashboard') }}" class="text-xl font-semibold">Selamat Datang, {{ auth()->user()?->name }}</a>
         <nav class="space-y-2 text-sm">
-            @if(auth()->user()?->hasPermission('dashboard.view'))<a class="admin-link" href="{{ route('admin.dashboard') }}">Beranda Admin</a>@endif
-            @if(auth()->user()?->hasPermission('portfolio.view'))<a class="admin-link" href="{{ route('admin.portfolios.index') }}">Portfolio</a>@endif
-            @if(auth()->user()?->hasPermission('service.view'))<a class="admin-link" href="{{ route('admin.services.index') }}">Daftar Harga</a>@endif
-            @if(auth()->user()?->hasPermission('booking.view'))<a class="admin-link" href="{{ route('admin.bookings.index') }}">Reservasi</a>@endif
-            @if(auth()->user()?->hasPermission('report.view'))<a class="admin-link" href="{{ route('admin.reports.index') }}">Laporan</a>@endif
-            @if(auth()->user()?->hasPermission('backup.view'))<a class="admin-link" href="{{ route('admin.backup.index') }}">Backup Database</a>@endif
-            @if(auth()->user()?->hasPermission('recycle.view'))<a class="admin-link" href="{{ route('admin.recycle-bin.index') }}">Recycle Bin</a>@endif
-            @if(auth()->user()?->hasPermission('access.view'))<a class="admin-link" href="{{ route('admin.access.index') }}">Hak Akses</a>@endif
-            @if(auth()->user()?->hasPermission('user.view'))<a class="admin-link" href="{{ route('admin.users.index') }}">User Data</a>@endif
-            @if(auth()->user()?->hasPermission('activity.view'))<a class="admin-link" href="{{ route('admin.activity-logs.index') }}">Log Aktivitas</a>@endif
-            @if(auth()->user()?->hasPermission('setting.view'))<a class="admin-link" href="{{ route('admin.settings.index') }}">Pengaturan Website</a>@endif
+            @if(auth()->user()?->hasPermission('dashboard.view'))<a class="admin-link {{ request()->routeIs('admin.dashboard') ? 'admin-link-active' : '' }}" href="{{ route('admin.dashboard') }}">Beranda Admin</a>@endif
+            @if(auth()->user()?->hasPermission('portfolio.view'))<a class="admin-link {{ request()->routeIs('admin.portfolios.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.portfolios.index') }}">Portfolio</a>@endif
+            @if(auth()->user()?->hasPermission('service.view'))<a class="admin-link {{ request()->routeIs('admin.services.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.services.index') }}">Daftar Harga</a>@endif
+            @if(auth()->user()?->hasPermission('booking.verify-payment'))<a class="admin-link {{ request()->routeIs('admin.bookings.payment-validations') ? 'admin-link-active' : '' }}" href="{{ route('admin.bookings.payment-validations') }}">Validasi Pembayaran</a>@endif
+            @if(auth()->user()?->hasPermission('report.view'))<a class="admin-link {{ request()->routeIs('admin.reports.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.reports.index') }}">Laporan</a>@endif
+            @if(auth()->user()?->hasPermission('backup.view'))<a class="admin-link {{ request()->routeIs('admin.backup.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.backup.index') }}">Backup Database</a>@endif
+            @if(auth()->user()?->hasPermission('recycle.view'))<a class="admin-link {{ request()->routeIs('admin.recycle-bin.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.recycle-bin.index') }}">Recycle Bin</a>@endif
+            @if(auth()->user()?->hasPermission('access.view'))<a class="admin-link {{ request()->routeIs('admin.access.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.access.index') }}">Hak Akses</a>@endif
+            @if(auth()->user()?->hasPermission('user.view'))<a class="admin-link {{ request()->routeIs('admin.users.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.users.index') }}">User Data</a>@endif
+            @if(auth()->user()?->hasPermission('activity.view'))<a class="admin-link {{ request()->routeIs('admin.activity-logs.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.activity-logs.index') }}">Log Aktivitas</a>@endif
+            @if(auth()->user()?->hasPermission('setting.view'))<a class="admin-link {{ request()->routeIs('admin.operational-hours.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.operational-hours.index') }}">Jam Operasional</a>@endif
+            @if(auth()->user()?->hasPermission('setting.view'))<a class="admin-link {{ request()->routeIs('admin.settings.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.settings.index') }}">Pengaturan Website</a>@endif
         </nav>
         <form method="POST" action="{{ route('admin.logout') }}">
             @csrf
-            <button class="w-full rounded-lg bg-rose-500 px-4 py-2 font-medium">Keluar</button>
+            <button class="btn-admin-logout">Keluar</button>
         </form>
     </aside>
 
@@ -51,15 +71,25 @@
         @yield('content')
     </section>
 </div>
-<div id="modal-crop-gambar-global-admin" class="fixed inset-0 z-[70] hidden bg-black/70 p-4">
-    <div class="mx-auto mt-4 max-w-4xl rounded-2xl bg-white p-4">
-        <h3 class="mb-3 text-lg font-semibold">Crop Gambar</h3>
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-2">
-            <img id="crop-gambar-global-admin" src="" class="max-h-[65vh] w-full object-contain" alt="Crop gambar">
+<div id="modal-crop-gambar-global-admin" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/65 p-2 md:p-4 backdrop-blur-[2px]">
+    <div class="flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-2xl" style="max-height: 94vh;">
+        <h3 class="text-base font-semibold text-slate-900">Crop Gambar</h3>
+        <p class="mt-1 text-sm text-slate-500">Atur area foto, lalu simpan hasil crop.</p>
+        <div class="mt-3 min-h-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 p-2 mx-auto" style="height: clamp(360px, 62vh, 760px);">
+            <img id="crop-gambar-global-admin" src="" class="h-full max-h-full w-full object-contain" alt="Crop gambar">
         </div>
-        <div class="mt-4 flex flex-wrap justify-end gap-2">
-            <button type="button" class="btn-secondary" id="crop-lewati-admin">Lewati</button>
+        <div class="mt-4 border-t border-slate-100 pt-3">
+            <div class="mb-3">
+                <div class="mb-1 flex items-center justify-between">
+                    <label for="crop-zoom-admin" class="text-sm font-medium text-slate-700">Zoom</label>
+                    <span id="crop-zoom-value-admin" class="text-xs text-slate-500">100%</span>
+                </div>
+                <input id="crop-zoom-admin" type="range" min="-0.8" max="8" step="0.05" value="0" class="w-full">
+            </div>
+        </div>
+        <div class="relative z-20 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-3">
             <button type="button" class="btn-secondary" id="crop-batal-admin">Batal</button>
+            <button type="button" class="btn-secondary" id="crop-lewati-admin">Lewati</button>
             <button type="button" class="btn-primary" id="crop-simpan-admin">Gunakan Hasil Crop</button>
         </div>
     </div>
@@ -71,6 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSimpan = document.getElementById('crop-simpan-admin');
     const btnLewati = document.getElementById('crop-lewati-admin');
     const btnBatal = document.getElementById('crop-batal-admin');
+    const zoomInput = document.getElementById('crop-zoom-admin');
+    const zoomValue = document.getElementById('crop-zoom-value-admin');
+    const CROP_TEMPLATE = '<cropper-canvas background><cropper-image rotatable scalable translatable></cropper-image><cropper-shade theme-color="rgba(15,23,42,0.48)"></cropper-shade><cropper-handle action="select" plain></cropper-handle><cropper-selection initial-coverage="0.84" movable resizable zoomable><cropper-grid role="grid" bordered covered></cropper-grid><cropper-crosshair centered></cropper-crosshair><cropper-handle action="move" theme-color="rgba(255,255,255,0.38)"></cropper-handle><cropper-handle action="n-resize"></cropper-handle><cropper-handle action="e-resize"></cropper-handle><cropper-handle action="s-resize"></cropper-handle><cropper-handle action="w-resize"></cropper-handle><cropper-handle action="ne-resize"></cropper-handle><cropper-handle action="nw-resize"></cropper-handle><cropper-handle action="se-resize"></cropper-handle><cropper-handle action="sw-resize"></cropper-handle></cropper-selection></cropper-canvas>';
 
     if (!modal || !window.Cropper) {
         return;
@@ -82,14 +115,50 @@ document.addEventListener('DOMContentLoaded', () => {
     let croppedFiles = [];
     let currentIndex = 0;
     let busy = false;
+    let cropperImageEl = null;
+    let currentZoomLevel = 0;
+    let currentImageMetrics = null;
+
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+    const setZoomLabel = (level) => {
+        if (zoomValue) {
+            zoomValue.textContent = `${Math.max(10, Math.round((1 + level) * 100))}%`;
+        }
+    };
+
+    const resetZoomUi = () => {
+        currentZoomLevel = 0;
+        if (zoomInput) {
+            zoomInput.value = '0';
+        }
+        setZoomLabel(0);
+    };
+
+    const applyZoomLevel = (nextLevel) => {
+        if (!cropperImageEl || typeof cropperImageEl.$zoom !== 'function') {
+            return;
+        }
+        const delta = nextLevel - currentZoomLevel;
+        if (Math.abs(delta) < 0.001) {
+            return;
+        }
+        cropperImageEl.$zoom(delta);
+        currentZoomLevel = nextLevel;
+        setZoomLabel(currentZoomLevel);
+    };
 
     const closeModal = () => {
         modal.classList.add('hidden');
+        modal.classList.remove('flex');
         if (cropper) {
             cropper.destroy();
             cropper = null;
         }
+        cropperImageEl = null;
+        currentImageMetrics = null;
         cropImage.src = '';
+        resetZoomUi();
     };
 
     const updatePreview = (input, file) => {
@@ -135,18 +204,125 @@ document.addEventListener('DOMContentLoaded', () => {
         const reader = new FileReader();
         reader.onload = (e) => {
             cropImage.src = e.target.result;
+            const stage = cropImage.parentElement;
+
+            cropImage.style.height = '100%';
+            cropImage.style.width = '100%';
+            cropImage.style.maxWidth = '100%';
             modal.classList.remove('hidden');
+            modal.classList.add('flex');
 
             if (cropper) {
                 cropper.destroy();
             }
 
-            cropper = new Cropper(cropImage, {
-                viewMode: 1,
-                autoCropArea: 1,
-                responsive: true,
-                dragMode: 'move',
-            });
+            const initCropper = () => {
+                cropper = new Cropper(cropImage, {
+                    viewMode: 1,
+                    autoCropArea: 1,
+                    responsive: true,
+                    dragMode: 'move',
+                    minContainerHeight: 360,
+                    minContainerWidth: 360,
+                    zoomable: true,
+                    template: CROP_TEMPLATE,
+                });
+
+                setTimeout(() => {
+                    if (!cropper || typeof cropper.getCropperImage !== 'function') {
+                        return;
+                    }
+
+                    cropperImageEl = cropper.getCropperImage();
+                    if (!cropperImageEl) {
+                        return;
+                    }
+
+                    const applyInitialZoom = () => {
+                        if (typeof cropperImageEl.$resetTransform === 'function') {
+                            cropperImageEl.$resetTransform();
+                        }
+
+                        if (typeof cropperImageEl.$center === 'function') {
+                            cropperImageEl.$center('contain');
+                        }
+
+                        let targetLevel = 0.65;
+                        if (currentImageMetrics) {
+                            const containScale = Math.min(
+                                currentImageMetrics.stageWidth / currentImageMetrics.naturalWidth,
+                                currentImageMetrics.stageHeight / currentImageMetrics.naturalHeight
+                            );
+                            const coverScale = Math.max(
+                                currentImageMetrics.stageWidth / currentImageMetrics.naturalWidth,
+                                currentImageMetrics.stageHeight / currentImageMetrics.naturalHeight
+                            );
+                            const factor = containScale > 0 ? (coverScale / containScale) : 1;
+                            targetLevel = clamp((factor - 1) + 0.2, -0.8, 8);
+                        }
+
+                        currentZoomLevel = 0;
+                        applyZoomLevel(targetLevel);
+                        if (zoomInput) {
+                            zoomInput.value = String(currentZoomLevel);
+                        }
+
+                        const selection = typeof cropper.getCropperSelection === 'function' ? cropper.getCropperSelection() : null;
+                        if (selection) {
+                            selection.initialCoverage = 0.84;
+                            if (typeof selection.$initSelection === 'function') {
+                                selection.$initSelection(true, true);
+                            }
+                        }
+                    };
+
+                    if (typeof cropperImageEl.$ready === 'function') {
+                        cropperImageEl.$ready(applyInitialZoom);
+                    } else {
+                        applyInitialZoom();
+                    }
+                }, 80);
+            };
+
+            const probe = new Image();
+            probe.onload = () => {
+                if (stage) {
+                    const maxWidth = Math.min(Math.floor(window.innerWidth * 0.78), 1120);
+                    const maxHeight = Math.min(Math.floor(window.innerHeight * 0.72), 760);
+                    const ratio = probe.naturalWidth / Math.max(probe.naturalHeight, 1);
+
+                    let stageWidth = maxWidth;
+                    let stageHeight = stageWidth / ratio;
+
+                    if (stageHeight > maxHeight) {
+                        stageHeight = maxHeight;
+                        stageWidth = stageHeight * ratio;
+                    }
+
+                    if (stageWidth < 420) {
+                        stageWidth = 420;
+                        stageHeight = stageWidth / ratio;
+                    }
+
+                    if (stageHeight < 260) {
+                        stageHeight = 260;
+                        stageWidth = Math.min(maxWidth, stageHeight * ratio);
+                    }
+
+                    stage.style.width = `${Math.round(stageWidth)}px`;
+                    stage.style.height = `${Math.round(stageHeight)}px`;
+
+                    currentImageMetrics = {
+                        naturalWidth: probe.naturalWidth,
+                        naturalHeight: probe.naturalHeight,
+                        stageWidth,
+                        stageHeight,
+                    };
+                }
+
+                initCropper();
+            };
+            probe.src = e.target.result;
         };
         reader.readAsDataURL(file);
     };
@@ -156,33 +332,83 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCurrentImage();
     };
 
-    const cropCurrentImage = () => {
+    const getCanvasFromCropper = async () => {
+        if (!cropper) {
+            return null;
+        }
+
+        if (typeof cropper.getCroppedCanvas === 'function') {
+            try {
+                return cropper.getCroppedCanvas({
+                    maxWidth: 2600,
+                    maxHeight: 2600,
+                    imageSmoothingQuality: 'high',
+                });
+            } catch (e) {
+                // fallback to Cropper v2 API below
+            }
+        }
+
+        if (typeof cropper.getCropperSelection === 'function') {
+            const selection = cropper.getCropperSelection();
+            if (selection && typeof selection.$toCanvas === 'function') {
+                try {
+                    return await selection.$toCanvas({
+                        width: 1800,
+                    });
+                } catch (e) {
+                    return null;
+                }
+            }
+        }
+
+        return null;
+    };
+
+    const cropCurrentImage = async () => {
         const source = queue[currentIndex];
         if (!source || !cropper) {
             nextImage();
             return;
         }
 
-        const canvas = cropper.getCroppedCanvas({
-            maxWidth: 2200,
-            maxHeight: 2200,
-            imageSmoothingQuality: 'high',
+        btnSimpan.disabled = true;
+        btnSimpan.classList.add('opacity-60', 'cursor-not-allowed');
+
+        const canvas = await getCanvasFromCropper();
+        if (!canvas || typeof canvas.toBlob !== 'function') {
+            croppedFiles.push(source);
+            btnSimpan.disabled = false;
+            btnSimpan.classList.remove('opacity-60', 'cursor-not-allowed');
+            nextImage();
+            return;
+        }
+
+        const blob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, source.type || 'image/png', 0.95);
         });
 
-        canvas.toBlob((blob) => {
-            if (!blob) {
-                croppedFiles.push(source);
-                nextImage();
-                return;
-            }
+        if (!blob) {
+            croppedFiles.push(source);
+            btnSimpan.disabled = false;
+            btnSimpan.classList.remove('opacity-60', 'cursor-not-allowed');
+            nextImage();
+            return;
+        }
 
+        try {
             const fileType = source.type || 'image/png';
             const extension = fileType.includes('jpeg') ? 'jpg' : (fileType.split('/')[1] || 'png');
             const baseName = source.name.replace(/\.[^.]+$/, '');
             const croppedFile = new File([blob], `${baseName}-crop.${extension}`, { type: fileType });
             croppedFiles.push(croppedFile);
-            nextImage();
-        }, source.type || 'image/png', 0.95);
+        } catch (e) {
+            croppedFiles.push(source);
+        }
+
+        btnSimpan.disabled = false;
+        btnSimpan.classList.remove('opacity-60', 'cursor-not-allowed');
+        nextImage();
     };
 
     const skipCurrentImage = () => {
@@ -210,11 +436,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    btnSimpan.addEventListener('click', cropCurrentImage);
+    btnSimpan.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (btnSimpan.disabled) {
+            return;
+        }
+        cropCurrentImage();
+    });
     btnLewati.addEventListener('click', skipCurrentImage);
     btnBatal.addEventListener('click', () => {
         busy = false;
+        btnSimpan.disabled = false;
+        btnSimpan.classList.remove('opacity-60', 'cursor-not-allowed');
         closeModal();
+    });
+
+    if (zoomInput) {
+        const onZoomChange = () => {
+            const value = Number(zoomInput.value || 0);
+            if (Number.isFinite(value)) {
+                applyZoomLevel(value);
+            }
+        };
+        zoomInput.addEventListener('input', onZoomChange);
+        zoomInput.addEventListener('change', onZoomChange);
+    }
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            busy = false;
+            btnSimpan.disabled = false;
+            btnSimpan.classList.remove('opacity-60', 'cursor-not-allowed');
+            closeModal();
+        }
     });
 });
 
@@ -260,3 +514,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+

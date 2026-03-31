@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FaqController as AdminFaqController;
+use App\Http\Controllers\Admin\OperationalHourController;
 use App\Http\Controllers\Admin\PortfolioController as AdminPortfolioController;
 use App\Http\Controllers\Admin\RecycleBinController;
 use App\Http\Controllers\Admin\ReportController;
@@ -59,12 +60,10 @@ Route::get('/reservasi', [BookingController::class, 'create'])->name('booking.cr
 Route::post('/reservasi', [BookingController::class, 'store'])->name('booking.store');
 Route::get('/api/available-times', [BookingController::class, 'availableTimes'])->name('booking.available-times');
 
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
-    Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
-});
+Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
+Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
 
-Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
+Route::prefix('admin')->middleware('auth403')->name('admin.')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -74,11 +73,17 @@ Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
     Route::get('/portfolio', [AdminPortfolioController::class, 'index'])->middleware('permission:portfolio.view')->name('portfolios.index');
     Route::get('/portfolio/create', [AdminPortfolioController::class, 'create'])->middleware('permission:portfolio.create')->name('portfolios.create');
     Route::post('/portfolio', [AdminPortfolioController::class, 'store'])->middleware('permission:portfolio.create')->name('portfolios.store');
+    Route::get('/portfolio/export/xlsx', [AdminPortfolioController::class, 'exportXlsx'])->middleware('permission:portfolio.view')->name('portfolios.export-xlsx');
+    Route::post('/portfolio/import/xlsx', [AdminPortfolioController::class, 'importXlsx'])->middleware('permission:portfolio.create')->name('portfolios.import-xlsx');
     Route::get('/portfolio/{portfolio}/edit', [AdminPortfolioController::class, 'edit'])->middleware('permission:portfolio.update')->name('portfolios.edit');
     Route::put('/portfolio/{portfolio}', [AdminPortfolioController::class, 'update'])->middleware('permission:portfolio.update')->name('portfolios.update');
     Route::delete('/portfolio/{portfolio}', [AdminPortfolioController::class, 'destroy'])->middleware('permission:portfolio.delete')->name('portfolios.destroy');
 
     Route::get('/pricelist', [ServiceController::class, 'index'])->middleware('permission:service.view')->name('services.index');
+    Route::get('/pricelist/services/export/xlsx', [ServiceController::class, 'exportServicesXlsx'])->middleware('permission:service.view')->name('services.export-services-xlsx');
+    Route::post('/pricelist/services/import/xlsx', [ServiceController::class, 'importServicesXlsx'])->middleware('permission:service.create')->name('services.import-services-xlsx');
+    Route::get('/pricelist/addons/export/xlsx', [ServiceController::class, 'exportAddonsXlsx'])->middleware('permission:service.view')->name('services.export-addons-xlsx');
+    Route::post('/pricelist/addons/import/xlsx', [ServiceController::class, 'importAddonsXlsx'])->middleware('permission:service.create')->name('services.import-addons-xlsx');
     Route::post('/pricelist/service', [ServiceController::class, 'storeService'])->middleware('permission:service.create')->name('services.store');
     Route::put('/pricelist/service/{service}', [ServiceController::class, 'updateService'])->middleware('permission:service.create')->name('services.update');
     Route::post('/pricelist/addon', [ServiceController::class, 'storeAddon'])->middleware('permission:service.create')->name('addons.store');
@@ -87,6 +92,7 @@ Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
     Route::delete('/pricelist/addon/{addon}', [ServiceController::class, 'destroyAddon'])->middleware('permission:service.delete')->name('addons.destroy');
 
     Route::get('/reservasi', [AdminBookingController::class, 'index'])->middleware('permission:booking.view')->name('bookings.index');
+    Route::get('/validasi-pembayaran', [AdminBookingController::class, 'paymentValidations'])->middleware('permission:booking.verify-payment')->name('bookings.payment-validations');
     Route::post('/reservasi/{booking}/status', [AdminBookingController::class, 'updateStatus'])->middleware('permission:booking.update')->name('bookings.update-status');
     Route::post('/reservasi/payment/{payment}/verify', [AdminBookingController::class, 'verifyPayment'])->middleware('permission:booking.verify-payment')->name('bookings.verify-payment');
     Route::post('/reservasi/slot', [AdminBookingController::class, 'storeSlot'])->middleware('permission:booking.update')->name('bookings.store-slot');
@@ -94,6 +100,9 @@ Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
     Route::get('/reservasi/export', [AdminBookingController::class, 'export'])->middleware('permission:booking.export')->name('bookings.export');
 
     Route::get('/laporan', [ReportController::class, 'index'])->middleware('permission:report.view')->name('reports.index');
+    Route::get('/laporan/export/pdf', [ReportController::class, 'exportPdf'])->middleware('permission:report.view')->name('reports.export-pdf');
+    Route::get('/laporan/export/excel', [ReportController::class, 'exportExcel'])->middleware('permission:report.view')->name('reports.export-excel');
+    Route::get('/laporan/print', [ReportController::class, 'print'])->middleware('permission:report.view')->name('reports.print');
 
     Route::get('/backup-database', [BackupController::class, 'index'])->middleware('permission:backup.view')->name('backup.index');
     Route::post('/backup-database/export', [BackupController::class, 'export'])->middleware('permission:backup.create')->name('backup.export');
@@ -102,11 +111,15 @@ Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
 
     Route::get('/recycle-bin', [RecycleBinController::class, 'index'])->middleware('permission:recycle.view')->name('recycle-bin.index');
     Route::post('/recycle-bin/{item}/restore', [RecycleBinController::class, 'restore'])->middleware('permission:recycle.restore')->name('recycle-bin.restore');
+    Route::delete('/recycle-bin/{item}', [RecycleBinController::class, 'destroy'])->middleware('permission:recycle.restore')->name('recycle-bin.destroy');
 
     Route::get('/hak-akses', [AccessControlController::class, 'index'])->middleware('permission:access.view')->name('access.index');
     Route::post('/hak-akses', [AccessControlController::class, 'update'])->middleware('permission:access.update')->name('access.update');
 
     Route::get('/user-data', [UserController::class, 'index'])->middleware('permission:user.view')->name('users.index');
+    Route::get('/user-data/list', [UserController::class, 'list'])->middleware('permission:user.view')->name('users.list');
+    Route::get('/user-data/export/xlsx', [UserController::class, 'exportXlsx'])->middleware('permission:user.view')->name('users.export-xlsx');
+    Route::post('/user-data/import/xlsx', [UserController::class, 'importXlsx'])->middleware('permission:user.create')->name('users.import-xlsx');
     Route::post('/user-data', [UserController::class, 'store'])->middleware('permission:user.create')->name('users.store');
     Route::post('/user-data/{user}/reset-password', [UserController::class, 'resetPassword'])->middleware('permission:user.reset-password')->name('users.reset-password');
     Route::delete('/user-data/{user}', [UserController::class, 'destroy'])->middleware('permission:user.delete')->name('users.destroy');
@@ -123,4 +136,6 @@ Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
 
     Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:setting.view')->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->middleware('permission:setting.update')->name('settings.update');
+    Route::get('/jam-operasional', [OperationalHourController::class, 'index'])->middleware('permission:setting.view')->name('operational-hours.index');
+    Route::post('/jam-operasional', [OperationalHourController::class, 'update'])->middleware('permission:setting.update')->name('operational-hours.update');
 });

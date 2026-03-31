@@ -14,6 +14,12 @@
     :root {
         --theme-primary: #c05b7b;
         --theme-secondary: #fce7ef;
+        --theme-primary-900: color-mix(in srgb, var(--theme-primary) 78%, black);
+        --theme-primary-800: color-mix(in srgb, var(--theme-primary) 68%, black);
+        --theme-primary-700: color-mix(in srgb, var(--theme-primary) 58%, black);
+        --theme-primary-500: var(--theme-primary);
+        --theme-secondary-100: color-mix(in srgb, var(--theme-secondary) 86%, white);
+        --theme-secondary-50: color-mix(in srgb, var(--theme-secondary) 74%, white);
     }
 
     body {
@@ -26,12 +32,82 @@
             linear-gradient(180deg, #fff7fa 0%, #ffffff 42%, #fff9fc 100%);
     }
 
+    .public-header {
+        border-bottom: 1px solid var(--theme-secondary);
+        background: #ffffffeb;
+    }
+
+    .public-brand {
+        color: var(--theme-primary);
+    }
+
+    .public-nav a:not(.btn-primary):not(.btn-secondary),
+    .public-mobile-nav a:not(.btn-primary):not(.btn-secondary) {
+        color: var(--theme-primary);
+        border: 1px solid transparent;
+        border-radius: 0.5rem;
+        padding: 0.35rem 0.55rem;
+    }
+
+    .public-nav a:not(.btn-primary):not(.btn-secondary):hover,
+    .public-mobile-nav a:not(.btn-primary):not(.btn-secondary):hover,
+    .public-nav a:not(.btn-primary):not(.btn-secondary):focus-visible,
+    .public-mobile-nav a:not(.btn-primary):not(.btn-secondary):focus-visible {
+        color: #0f172a;
+        background-color: var(--theme-secondary);
+        border-color: var(--theme-secondary);
+        outline: none;
+    }
+
+    .public-mobile-nav {
+        border-top: 1px solid var(--theme-secondary);
+        background: #fffffff2;
+    }
+
+    .public-footer {
+        border-top: 1px solid var(--theme-secondary);
+        background-color: var(--theme-secondary);
+    }
+
     .admin-bg {
         background: linear-gradient(180deg, #f8fafc, #eef2ff);
     }
 
     a {
         @apply transition;
+    }
+
+    /* Keep legacy Tailwind rose classes synced with configurable theme colors */
+    .text-rose-900 {
+        color: var(--theme-primary-900) !important;
+    }
+
+    .text-rose-800 {
+        color: var(--theme-primary-800) !important;
+    }
+
+    .text-rose-700 {
+        color: var(--theme-primary-700) !important;
+    }
+
+    .text-rose-900\/80 {
+        color: color-mix(in srgb, var(--theme-primary-900) 80%, transparent) !important;
+    }
+
+    .bg-rose-50 {
+        background-color: var(--theme-secondary-50) !important;
+    }
+
+    .bg-rose-100 {
+        background-color: var(--theme-secondary-100) !important;
+    }
+
+    .border-rose-100 {
+        border-color: color-mix(in srgb, var(--theme-secondary) 78%, white) !important;
+    }
+
+    .border-rose-200 {
+        border-color: color-mix(in srgb, var(--theme-secondary) 62%, white) !important;
     }
 }
 
@@ -48,7 +124,11 @@
     .btn-secondary {
         border-color: color-mix(in srgb, var(--theme-primary) 35%, white);
         color: color-mix(in srgb, var(--theme-primary) 70%, black);
-        @apply inline-flex items-center justify-center rounded-xl border bg-white px-4 py-2 font-medium hover:bg-rose-50;
+        @apply inline-flex items-center justify-center rounded-xl border bg-white px-4 py-2 font-medium;
+    }
+
+    .btn-secondary:hover {
+        background-color: var(--theme-secondary-50);
     }
 
     .btn-danger {
@@ -73,7 +153,16 @@
     .field select,
     .field textarea,
     .input {
-        @apply rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100;
+        border-color: #cbd5e1;
+        @apply rounded-xl border px-3 py-2 outline-none focus:ring-2;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus,
+    .input:focus {
+        border-color: var(--theme-primary-500);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-secondary) 70%, white);
     }
 
     .admin-card {
@@ -84,8 +173,39 @@
         @apply mt-2 text-2xl font-semibold text-slate-900;
     }
 
+    .admin-sidebar {
+        background-color: var(--theme-primary);
+        background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12));
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+    }
+
     .admin-link {
-        @apply block rounded-lg px-3 py-2 hover:bg-slate-800;
+        color: #fff;
+        @apply block rounded-lg border border-transparent px-3 py-2;
+        transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .admin-link:hover,
+    .admin-link:focus-visible {
+        color: #0f172a;
+        background-color: var(--theme-secondary) !important;
+        border-color: var(--theme-secondary) !important;
+        box-shadow: inset 4px 0 0 var(--theme-primary), 0 8px 16px rgba(2, 6, 23, 0.18);
+        transform: translateX(2px);
+        outline: none;
+    }
+
+    .admin-link-active {
+        color: #0f172a;
+        background-color: var(--theme-secondary) !important;
+        border-color: var(--theme-secondary) !important;
+        box-shadow: inset 4px 0 0 var(--theme-primary), 0 8px 16px rgba(2, 6, 23, 0.18);
+    }
+
+    .btn-admin-logout {
+        color: #0f172a;
+        background-color: rgba(255, 255, 255, 0.92);
+        @apply w-full rounded-lg px-4 py-2 font-semibold;
     }
 
     .table-admin {
@@ -102,7 +222,9 @@
     }
 
     .chip {
-        @apply rounded-full border border-rose-300 px-4 py-2 text-sm;
+        color: var(--theme-primary);
+        border-color: var(--theme-secondary);
+        @apply rounded-full border px-4 py-2 text-sm;
     }
 
     .chip-active {
@@ -112,6 +234,8 @@
     }
 
     .addon-item {
-        @apply flex items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm;
+        border-color: color-mix(in srgb, var(--theme-secondary) 62%, white);
+        background-color: var(--theme-secondary-50);
+        @apply flex items-center justify-between gap-4 rounded-xl px-4 py-3 text-sm;
     }
 }

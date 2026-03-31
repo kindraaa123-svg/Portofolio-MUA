@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserRole::class,
             'permission' => \App\Http\Middleware\EnsureUserPermission::class,
+            'auth403' => \App\Http\Middleware\EnsureAuthenticatedWith403::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -17,7 +17,7 @@ class ActivityLogController extends Controller
             ->when($module !== '', fn ($query) => $query->where('module', $module))
             ->when($action !== '', fn ($query) => $query->where('action', 'like', "%{$action}%"))
             ->latest()
-            ->paginate(25)
+            ->paginate(20)
             ->withQueryString();
 
         return view('admin.activity-logs.index', [

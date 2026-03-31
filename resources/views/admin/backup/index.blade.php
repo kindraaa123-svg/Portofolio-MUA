@@ -21,29 +21,4 @@
         </form>
     </section>
 </div>
-
-<div class="card-premium bg-white overflow-x-auto">
-    <table class="table-admin">
-        <thead><tr><th>Nama File</th><th>Tipe</th><th>Size</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
-        <tbody>
-            @foreach($logs as $item)
-                <tr>
-                    <td>{{ $item->file_name }}</td>
-                    <td>{{ $item->type }}</td>
-                    <td>{{ number_format($item->file_size / 1024, 2) }} KB</td>
-                    <td>{{ $item->status }}</td>
-                    <td>{{ $item->created_at?->format('d M Y H:i') }}</td>
-                    <td>
-                        @if($item->type === 'database-export' && $item->status === 'completed')
-                            <a class="btn-secondary text-xs" href="{{ route('admin.backup.download', $item) }}">Download</a>
-                        @else
-                            -
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
-<div class="mt-4">{{ $logs->links() }}</div>
 @endsection

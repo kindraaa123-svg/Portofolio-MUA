@@ -2,8 +2,8 @@
 @section('title', 'Reservasi Online')
 @section('content')
 <section class="container mx-auto px-4 py-16 max-w-5xl">
-    <h1 class="font-serif text-4xl text-rose-900 mb-3">Reservasi Online</h1>
-    <p class="text-rose-900/80 mb-8">Booking dikonfirmasi setelah admin memverifikasi pembayaran DP 50% dari total layanan.</p>
+    <h1 class="font-serif text-4xl text-black mb-3">Reservasi Online</h1>
+    <p class="text-black mb-8">Booking dikonfirmasi setelah admin memverifikasi pembayaran DP 50% dari total layanan.</p>
 
     <form method="POST" action="{{ route('booking.store') }}" enctype="multipart/form-data" class="card-premium space-y-6" id="booking-form">
         @csrf

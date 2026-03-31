@@ -12,6 +12,7 @@ use App\Models\BookingPayment;
 use App\Models\Customer;
 use App\Models\Service;
 use App\Support\ActivityLogger;
+use App\Support\FonnteWhatsApp;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -60,6 +61,9 @@ class BookingController extends Controller
             'transfer_at' => ['required', 'date'],
             'dp_proof' => ['required', 'image', 'max:4096'],
         ]);
+
+        $normalizedPhone = app(FonnteWhatsApp::class)->normalizeForStorage($validated['phone']) ?? $validated['phone'];
+        $validated['phone'] = $normalizedPhone;
 
         $service = Service::findOrFail($validated['service_id']);
         $addons = Addon::whereIn('id', $validated['addon_ids'] ?? [])->get();
@@ -156,6 +160,8 @@ class BookingController extends Controller
         } catch (\Throwable $e) {
             Log::warning('Email booking notification failed', ['error' => $e->getMessage()]);
         }
+
+        app(FonnteWhatsApp::class)->sendReservationCreated($booking);
 
         return back()->with('success', 'Reservasi berhasil dibuat. Booking akan dikonfirmasi setelah admin memverifikasi pembayaran DP 50%.');
     }
