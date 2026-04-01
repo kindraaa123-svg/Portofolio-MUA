@@ -31,8 +31,8 @@ class SettingController extends Controller
             'instagram_url' => ['nullable', 'url'],
             'meta_description' => ['nullable', 'string'],
             'meta_keywords' => ['nullable', 'string'],
-            'theme_primary' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'theme_secondary' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'theme_primary' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'theme_secondary' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'logo' => ['nullable', 'image', 'max:4096'],
             'home_banner' => ['nullable', 'image', 'max:8192'],
             'logo_cropped' => ['nullable', 'string'],
@@ -75,6 +75,24 @@ class SettingController extends Controller
         ActivityLogger::log('setting', 'update', $setting, ['site_name' => $setting->site_name]);
 
         return back()->with('success', 'Pengaturan website berhasil disimpan.');
+    }
+
+    public function updateTheme(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'theme_primary' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'theme_secondary' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        ]);
+
+        $setting = WebsiteSetting::firstOrCreate([], ['site_name' => 'MUA Studio']);
+        $setting->update($data);
+
+        ActivityLogger::log('setting', 'update', $setting, [
+            'theme_primary' => $setting->theme_primary,
+            'theme_secondary' => $setting->theme_secondary,
+        ]);
+
+        return back()->with('success', 'Warna website berhasil disimpan ke database.');
     }
 
     protected function storeCroppedImage(string $base64Image, string $directory): string

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FaqController as AdminFaqController;
 use App\Http\Controllers\Admin\OperationalHourController;
 use App\Http\Controllers\Admin\PortfolioController as AdminPortfolioController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\RecycleBinController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ServiceController;
@@ -125,6 +126,9 @@ Route::prefix('admin')->middleware('auth403')->name('admin.')->group(function ()
     Route::delete('/user-data/{user}', [UserController::class, 'destroy'])->middleware('permission:user.delete')->name('users.destroy');
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->middleware('permission:activity.view')->name('activity-logs.index');
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
 
     Route::get('/testimoni', [AdminTestimonialController::class, 'index'])->middleware('permission:testimonial.view')->name('testimonials.index');
     Route::post('/testimoni', [AdminTestimonialController::class, 'store'])->middleware('permission:testimonial.create')->name('testimonials.store');
@@ -136,6 +140,7 @@ Route::prefix('admin')->middleware('auth403')->name('admin.')->group(function ()
 
     Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:setting.view')->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->middleware('permission:setting.update')->name('settings.update');
+    Route::post('/settings/theme', [SettingController::class, 'updateTheme'])->middleware('permission:setting.update')->name('settings.update-theme');
     Route::get('/jam-operasional', [OperationalHourController::class, 'index'])->middleware('permission:setting.view')->name('operational-hours.index');
     Route::post('/jam-operasional', [OperationalHourController::class, 'update'])->middleware('permission:setting.update')->name('operational-hours.update');
 });

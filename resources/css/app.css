@@ -179,9 +179,40 @@
         box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
     }
 
+    .admin-sidebar-glow {
+        background:
+            radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.32), transparent 45%),
+            radial-gradient(circle at 92% 90%, rgba(255, 255, 255, 0.18), transparent 38%);
+        pointer-events: none;
+    }
+
+    .admin-user-chip {
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.26);
+        backdrop-filter: blur(2px);
+    }
+
+    .admin-menu-section {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(2px);
+        @apply rounded-2xl p-2;
+    }
+
+    .admin-menu-label {
+        color: rgba(255, 255, 255, 0.78);
+        letter-spacing: 0.06em;
+        @apply px-2 text-[11px] font-semibold uppercase;
+    }
+
+    .admin-sidebar-divider {
+        border-color: rgba(255, 255, 255, 0.2);
+        @apply border-t;
+    }
+
     .admin-link {
         color: #fff;
-        @apply block rounded-lg border border-transparent px-3 py-2;
+        @apply flex items-center gap-2 rounded-xl border border-transparent px-3 py-2;
         transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
     }
 

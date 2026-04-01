@@ -60,12 +60,13 @@
             <label class="field"><span>Nomor WhatsApp</span><input name="whatsapp_number" value="{{ old('whatsapp_number', $setting?->whatsapp_number) }}"></label>
             <label class="field"><span>Instagram URL</span><input name="instagram_url" value="{{ old('instagram_url', $setting?->instagram_url) }}"></label>
             <label class="field"><span>Alamat</span><textarea name="address" rows="3">{{ old('address', $setting?->address) }}</textarea></label>
+            <button class="btn-secondary w-full" type="submit">Simpan Data Website</button>
         </section>
 
         <section class="card-premium bg-white space-y-4">
             <div class="pb-3 border-b border-slate-200">
                 <h2 class="font-semibold text-lg">Warna Website</h2>
-                <p class="mt-1 text-xs text-slate-500">Warna ini juga dipakai untuk tema sidebar admin.</p>
+                <p class="mt-1 text-xs text-slate-500">Warna ini juga dipakai untuk tema sidebar admin dan disimpan ke database.</p>
             </div>
 
             <label class="field">
@@ -87,7 +88,7 @@
                 <div id="sidebar-theme-preview" class="mt-2 h-14 rounded-lg border border-white/35"></div>
             </div>
 
-            <button class="btn-primary w-full" type="submit">Simpan Pengaturan</button>
+            <button class="btn-primary w-full" type="submit" formaction="{{ route('admin.settings.update-theme') }}" formmethod="POST">Simpan Warna ke Database</button>
         </section>
     </div>
 </form>
