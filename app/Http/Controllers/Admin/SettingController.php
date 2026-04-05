@@ -27,6 +27,8 @@ class SettingController extends Controller
             'contact_phone' => ['nullable', 'string', 'max:32'],
             'contact_email' => ['nullable', 'email', 'max:160'],
             'whatsapp_number' => ['nullable', 'string', 'max:32'],
+            'bank_account_number' => ['nullable', 'string', 'max:64'],
+            'bank_account_bank_name' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string'],
             'instagram_url' => ['nullable', 'url'],
             'meta_description' => ['nullable', 'string'],

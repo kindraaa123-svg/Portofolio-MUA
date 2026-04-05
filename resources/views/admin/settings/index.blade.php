@@ -58,6 +58,8 @@
             <label class="field"><span>No Kontak</span><input name="contact_phone" value="{{ old('contact_phone', $setting?->contact_phone) }}"></label>
             <label class="field"><span>Email</span><input type="email" name="contact_email" value="{{ old('contact_email', $setting?->contact_email) }}"></label>
             <label class="field"><span>Nomor WhatsApp</span><input name="whatsapp_number" value="{{ old('whatsapp_number', $setting?->whatsapp_number) }}"></label>
+            <label class="field"><span>Nama Bank Tujuan DP</span><input name="bank_account_bank_name" value="{{ old('bank_account_bank_name', $setting?->bank_account_bank_name) }}"></label>
+            <label class="field"><span>Nomor Rekening Tujuan DP</span><input name="bank_account_number" value="{{ old('bank_account_number', $setting?->bank_account_number) }}"></label>
             <label class="field"><span>Instagram URL</span><input name="instagram_url" value="{{ old('instagram_url', $setting?->instagram_url) }}"></label>
             <label class="field"><span>Alamat</span><textarea name="address" rows="3">{{ old('address', $setting?->address) }}</textarea></label>
             <button class="btn-secondary w-full" type="submit">Simpan Data Website</button>
@@ -72,14 +74,14 @@
             <label class="field">
                 <span>Warna Utama (Sidebar & Tombol)</span>
                 <div class="flex items-center gap-3">
-                    <input type="color" name="theme_primary" id="theme-primary-input" value="{{ old('theme_primary', $setting?->theme_primary ?? '#c05b7b') }}">
+                    <input type="color" name="theme_primary" id="theme-primary-input" value="{{ old('theme_primary', $setting?->theme_primary ?? '#2563eb') }}">
                     <span id="theme-primary-hex" class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700"></span>
                 </div>
             </label>
             <label class="field">
                 <span>Warna Pendukung (Hover Sidebar)</span>
                 <div class="flex items-center gap-3">
-                    <input type="color" name="theme_secondary" id="theme-secondary-input" value="{{ old('theme_secondary', $setting?->theme_secondary ?? '#fce7ef') }}">
+                    <input type="color" name="theme_secondary" id="theme-secondary-input" value="{{ old('theme_secondary', $setting?->theme_secondary ?? '#dbeafe') }}">
                     <span id="theme-secondary-hex" class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700"></span>
                 </div>
             </label>
@@ -106,8 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const applyThemePreview = () => {
-        const primary = (primaryInput.value || '#c05b7b').toUpperCase();
-        const secondary = (secondaryInput.value || '#fce7ef').toUpperCase();
+        const primary = (primaryInput.value || '#2563eb').toUpperCase();
+        const secondary = (secondaryInput.value || '#dbeafe').toUpperCase();
 
         primaryHex.textContent = primary;
         secondaryHex.textContent = secondary;
@@ -116,11 +118,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.style.setProperty('--theme-secondary', secondary);
 
         preview.style.backgroundColor = primary;
-        preview.style.backgroundImage = 'linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12))';
+        preview.style.backgroundImage = 'none';
 
         if (adminSidebar) {
             adminSidebar.style.backgroundColor = primary;
-            adminSidebar.style.backgroundImage = 'linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12))';
+            adminSidebar.style.backgroundImage = 'none';
         }
     };
 

@@ -175,8 +175,8 @@ class DatabaseSeeder extends Seeder
             'instagram_url' => 'https://instagram.com/auroramua',
             'meta_title' => 'Aurora Beauty MUA',
             'meta_description' => 'Layanan makeup wedding, wisuda, engagement, party, prewedding, editorial.',
-            'theme_primary' => '#c05b7b',
-            'theme_secondary' => '#fce7ef',
+            'theme_primary' => '#2563eb',
+            'theme_secondary' => '#dbeafe',
         ]);
 
         foreach (range(1, 6) as $day) {

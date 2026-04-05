@@ -10,6 +10,7 @@ use App\Support\ActivityLogger;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response as ResponseFacade;
+use Illuminate\Support\Str;
 use ZipArchive;
 
 class ReportController extends Controller
@@ -36,6 +37,7 @@ class ReportController extends Controller
         $report = $this->buildReportData($request, false);
         $filename = 'laporan-' . now()->format('Ymd-His') . '.xlsx';
         $dir = storage_path('app/exports');
+        $logoAsset = $this->resolveLogoAsset($report['siteLogoPath'] ?? null);
 
         if (! is_dir($dir)) {
             mkdir($dir, 0775, true);
@@ -48,51 +50,46 @@ class ReportController extends Controller
         }
 
         $rows = [];
-        $rows[] = ['Ringkasan Laporan'];
+        if ($logoAsset) {
+            // Sisakan ruang untuk area logo agar tidak menutupi isi laporan.
+            for ($i = 0; $i < 6; $i++) {
+                $rows[] = [];
+            }
+        }
+
+        $rows[] = ['Laporan Keuangan Profesional'];
         $rows[] = ['Website', $report['siteName']];
-        $rows[] = ['Logo Website', $report['siteLogoUrl'] ?: '-'];
-        $rows[] = ['Rentang Tanggal', $report['from'] . ' s/d ' . $report['to']];
-        $rows[] = ['Keyword', $report['keyword'] !== '' ? $report['keyword'] : '-'];
-        $rows[] = ['Status Booking', $report['status'] !== '' ? $report['status'] : '-'];
-        $rows[] = ['Status Pembayaran', $report['paymentStatus'] !== '' ? $report['paymentStatus'] : '-'];
-        $rows[] = ['Total Booking', (string) $report['summary']['total_bookings']];
-        $rows[] = ['Booking Pending', (string) $report['summary']['total_pending']];
-        $rows[] = ['Booking Confirmed', (string) $report['summary']['total_confirmed']];
-        $rows[] = ['Total Transaksi', (string) $report['summary']['total_transactions']];
-        $rows[] = ['DP Verified', (string) $report['summary']['total_dp_verified']];
-        $rows[] = ['DP Pending', (string) $report['summary']['total_dp_pending']];
+        $rows[] = ['Periode', $report['from'] . ' s/d ' . $report['to']];
+        $rows[] = ['Dibuat Pada', $report['generatedAt']];
         $rows[] = [];
-        $rows[] = ['Rekap Booking'];
-        $rows[] = ['Kode', 'Customer', 'Tanggal', 'Status', 'Total'];
-        foreach ($report['bookings'] as $booking) {
+        $rows[] = ['Laporan Laba Rugi (Cash Basis)'];
+        $rows[] = ['Total Income (Verified)', (string) $report['summary']['total_income_verified']];
+        $rows[] = ['Total Outcome (Verified)', (string) $report['summary']['total_outcome_verified']];
+        $rows[] = ['Laba Bersih', (string) $report['summary']['net_income']];
+        $rows[] = [];
+        $rows[] = ['Rincian Income/Outcome Harian'];
+        $rows[] = ['Tanggal', 'Income', 'Outcome', 'Net'];
+        foreach ($report['dailyFinancialRows'] as $row) {
             $rows[] = [
-                (string) $booking->booking_code,
-                (string) ($booking->customer?->name ?? ''),
-                (string) ($booking->booking_date?->format('Y-m-d') ?? ''),
-                (string) $booking->status,
-                (string) $booking->grand_total,
+                (string) $row['date'],
+                (string) $row['income'],
+                (string) $row['outcome'],
+                (string) $row['net'],
             ];
         }
 
-        $rows[] = [];
-        $rows[] = ['Rekap Pembayaran'];
-        $rows[] = ['Booking', 'Pembayar', 'Tipe', 'Status', 'Nominal'];
-        foreach ($report['payments'] as $payment) {
-            $rows[] = [
-                (string) ($payment->booking?->booking_code ?? ''),
-                (string) $payment->payer_name,
-                (string) $payment->payment_type,
-                (string) $payment->status,
-                (string) $payment->amount,
-            ];
-        }
-
-        $zip->addFromString('[Content_Types].xml', $this->xlsxContentTypesXml());
+        $zip->addFromString('[Content_Types].xml', $this->xlsxContentTypesXml($logoAsset));
         $zip->addFromString('_rels/.rels', $this->xlsxRootRelsXml());
         $zip->addFromString('xl/workbook.xml', $this->xlsxWorkbookXml());
         $zip->addFromString('xl/_rels/workbook.xml.rels', $this->xlsxWorkbookRelsXml());
         $zip->addFromString('xl/styles.xml', $this->xlsxStylesXml());
-        $zip->addFromString('xl/worksheets/sheet1.xml', $this->xlsxSheetXml($rows));
+        $zip->addFromString('xl/worksheets/sheet1.xml', $this->xlsxSheetXml($rows, $logoAsset !== null));
+        if ($logoAsset) {
+            $zip->addFromString('xl/worksheets/_rels/sheet1.xml.rels', $this->xlsxSheetRelsXml());
+            $zip->addFromString('xl/drawings/drawing1.xml', $this->xlsxDrawingXml());
+            $zip->addFromString('xl/drawings/_rels/drawing1.xml.rels', $this->xlsxDrawingRelsXml($logoAsset['filename']));
+            $zip->addFromString('xl/media/' . $logoAsset['filename'], $logoAsset['content']);
+        }
         $zip->close();
 
         ActivityLogger::log('report', 'export-excel', null, $report['filters']);
@@ -107,11 +104,51 @@ class ReportController extends Controller
         $report = $this->buildReportData($request, false);
 
         ActivityLogger::log('report', 'export-pdf', null, $report['filters']);
+        $filename = 'laporan-keuangan-' . now()->format('Ymd-His') . '.pdf';
 
-        return response()->view('admin.reports.print', [
+        if (! class_exists('TCPDF')) {
+            $tcpdfPath = base_path('vendor/tecnickcom/tcpdf/tcpdf.php');
+            if (is_file($tcpdfPath)) {
+                require_once $tcpdfPath;
+            }
+        }
+
+        if (! class_exists('TCPDF')) {
+            return back()->withErrors(['report' => 'Export PDF gagal: library TCPDF tidak ditemukan.']);
+        }
+
+        $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->SetCreator(config('app.name', 'Laravel'));
+        $pdf->SetAuthor($report['siteName']);
+        $pdf->SetTitle('Laporan Keuangan');
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->SetAutoPageBreak(true, 12);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->AddPage();
+        $pdf->SetY(12);
+
+        $logoPath = $report['siteLogoPath'] ?? null;
+        if ($logoPath && is_file($logoPath) && is_readable($logoPath)) {
+            try {
+                $pdf->Image($logoPath, 10, 10, 18, 18, '', '', '', true, 300, '', false, false, 0, false, false, false);
+                $pdf->SetY(30);
+            } catch (\Throwable $e) {
+                // Ignore logo rendering failure and continue generating PDF.
+                $pdf->SetY(12);
+            }
+        }
+
+        $html = view('admin.reports.pdf', [
             ...$report,
-            'mode' => 'pdf',
-            'autoPrint' => true,
+        ])->render();
+
+        $pdf->writeHTML($html, true, false, true, false, '');
+        $content = $pdf->Output($filename, 'S');
+
+        return response($content, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
 
@@ -130,8 +167,10 @@ class ReportController extends Controller
 
     private function buildReportData(Request $request, bool $paginate): array
     {
-        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $defaultFrom = Carbon::create(now()->year, 4, 1)->toDateString();
+        $from = $request->input('from', $defaultFrom);
         $to = $request->input('to', now()->toDateString());
+        $order = strtolower((string) $request->input('order', 'desc')) === 'asc' ? 'asc' : 'desc';
         $keyword = $request->string('q')->toString();
         $status = $request->string('status')->toString();
         $paymentStatus = $request->string('payment_status')->toString();
@@ -150,10 +189,19 @@ class ReportController extends Controller
         $filters = [
             'from' => $from,
             'to' => $to,
+            'order' => $order,
             'q' => $keyword,
             'status' => $status,
             'payment_status' => $paymentStatus,
         ];
+
+        $transactionDates = (clone $paymentBaseQuery)
+            ->selectRaw('DATE(created_at) as report_date')
+            ->groupBy('report_date')
+            ->orderBy('report_date', $order)
+            ->pluck('report_date')
+            ->filter()
+            ->values();
 
         $bookings = $paginate
             ? (clone $bookingBaseQuery)->latest()->paginate(20)->withQueryString()
@@ -163,26 +211,70 @@ class ReportController extends Controller
             ? (clone $paymentBaseQuery)->latest()->paginate(20, ['*'], 'payments_page')->withQueryString()
             : (clone $paymentBaseQuery)->latest()->get();
 
+        $verifiedPayments = (clone $paymentBaseQuery)->where('status', 'verified')->get();
+        $incomePayments = $verifiedPayments->filter(function ($payment) {
+            $type = strtolower((string) $payment->payment_type);
+            return $type !== 'refund' && (float) $payment->amount > 0;
+        });
+        $outcomePayments = $verifiedPayments->filter(function ($payment) {
+            $type = strtolower((string) $payment->payment_type);
+            return $type === 'refund' || (float) $payment->amount < 0;
+        });
+
+        $dailyFinancialRows = $verifiedPayments
+            ->groupBy(function ($payment) {
+                return optional($payment->paid_at ?? $payment->created_at)->format('Y-m-d');
+            })
+            ->map(function ($group, $date) {
+                $income = $group->filter(function ($payment) {
+                    $type = strtolower((string) $payment->payment_type);
+                    return $type !== 'refund' && (float) $payment->amount > 0;
+                })->sum('amount');
+
+                $outcome = $group->filter(function ($payment) {
+                    $type = strtolower((string) $payment->payment_type);
+                    return $type === 'refund' || (float) $payment->amount < 0;
+                })->sum(function ($payment) {
+                    return abs((float) $payment->amount);
+                });
+
+                return [
+                    'date' => $date,
+                    'income' => (float) $income,
+                    'outcome' => (float) $outcome,
+                    'net' => (float) $income - (float) $outcome,
+                ];
+            })
+            ->sortByDesc('date')
+            ->values();
+
         $websiteSetting = WebsiteSetting::query()->latest('id')->first();
         $siteName = $websiteSetting?->site_name ?: config('app.name', 'Website');
         $siteLogoUrl = $websiteSetting?->logo ? asset('storage/' . ltrim($websiteSetting->logo, '/')) : null;
+        $siteLogoPath = $websiteSetting?->logo ? storage_path('app/public/' . ltrim($websiteSetting->logo, '/')) : null;
 
         return [
             'siteName' => $siteName,
             'siteLogoUrl' => $siteLogoUrl,
+            'siteLogoPath' => $siteLogoPath,
             'from' => $from,
             'to' => $to,
+            'order' => $order,
+            'generatedAt' => now()->format('Y-m-d H:i:s'),
             'keyword' => $keyword,
             'status' => $status,
             'paymentStatus' => $paymentStatus,
             'filters' => $filters,
+            'transactionDates' => $transactionDates,
+            'dailyFinancialRows' => $dailyFinancialRows,
             'summary' => [
-                'total_bookings' => (clone $bookingBaseQuery)->count(),
-                'total_pending' => (clone $bookingBaseQuery)->where('status', 'pending')->count(),
-                'total_confirmed' => (clone $bookingBaseQuery)->where('status', 'confirmed')->count(),
-                'total_transactions' => (float) (clone $bookingBaseQuery)->sum('grand_total'),
-                'total_dp_verified' => (float) (clone $paymentBaseQuery)->where('payment_type', 'dp')->where('status', 'verified')->sum('amount'),
-                'total_dp_pending' => (float) (clone $paymentBaseQuery)->where('payment_type', 'dp')->where('status', 'pending')->sum('amount'),
+                'total_income_verified' => (float) $incomePayments->sum('amount'),
+                'total_outcome_verified' => (float) $outcomePayments->sum(function ($payment) {
+                    return abs((float) $payment->amount);
+                }),
+                'net_income' => (float) $incomePayments->sum('amount') - (float) $outcomePayments->sum(function ($payment) {
+                    return abs((float) $payment->amount);
+                }),
             ],
             'bookings' => $bookings,
             'payments' => $payments,
@@ -222,16 +314,26 @@ class ReportController extends Controller
             });
     }
 
-    private function xlsxContentTypesXml(): string
+    private function xlsxContentTypesXml(?array $logoAsset = null): string
     {
-        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
             . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
             . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Default Extension="png" ContentType="image/png"/>'
+            . '<Default Extension="jpg" ContentType="image/jpeg"/>'
+            . '<Default Extension="jpeg" ContentType="image/jpeg"/>'
             . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
             . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
-            . '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
-            . '</Types>';
+            . '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+
+        if ($logoAsset) {
+            $xml .= '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>';
+        }
+
+        $xml .= '</Types>';
+
+        return $xml;
     }
 
     private function xlsxRootRelsXml(): string
@@ -272,10 +374,10 @@ class ReportController extends Controller
             . '</styleSheet>';
     }
 
-    private function xlsxSheetXml(array $rows): string
+    private function xlsxSheetXml(array $rows, bool $hasLogo = false): string
     {
         $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-        $xml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+        $xml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
         $xml .= '<sheetData>';
 
         foreach ($rows as $rowIndex => $row) {
@@ -289,9 +391,72 @@ class ReportController extends Controller
             $xml .= '</row>';
         }
 
-        $xml .= '</sheetData></worksheet>';
+        $xml .= '</sheetData>';
+
+        if ($hasLogo) {
+            $xml .= '<drawing r:id="rId1"/>';
+        }
+
+        $xml .= '</worksheet>';
 
         return $xml;
+    }
+
+    private function xlsxSheetRelsXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>'
+            . '</Relationships>';
+    }
+
+    private function xlsxDrawingXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<xdr:twoCellAnchor editAs="oneCell">'
+            . '<xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>'
+            . '<xdr:to><xdr:col>2</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>4</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>'
+            . '<xdr:pic>'
+            . '<xdr:nvPicPr><xdr:cNvPr id="1" name="Website Logo"/><xdr:cNvPicPr/></xdr:nvPicPr>'
+            . '<xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>'
+            . '<xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>'
+            . '</xdr:pic>'
+            . '<xdr:clientData/>'
+            . '</xdr:twoCellAnchor>'
+            . '</xdr:wsDr>';
+    }
+
+    private function xlsxDrawingRelsXml(string $logoFilename): string
+    {
+        $safeFilename = htmlspecialchars($logoFilename, ENT_XML1);
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/' . $safeFilename . '"/>'
+            . '</Relationships>';
+    }
+
+    private function resolveLogoAsset(?string $logoPath): ?array
+    {
+        if (! $logoPath || ! is_file($logoPath) || ! is_readable($logoPath)) {
+            return null;
+        }
+
+        $ext = Str::lower(pathinfo($logoPath, PATHINFO_EXTENSION));
+        if (! in_array($ext, ['png', 'jpg', 'jpeg'], true)) {
+            return null;
+        }
+
+        $content = @file_get_contents($logoPath);
+        if ($content === false) {
+            return null;
+        }
+
+        return [
+            'filename' => 'site-logo.' . $ext,
+            'content' => $content,
+        ];
     }
 
     private function columnLetter(int $index): string

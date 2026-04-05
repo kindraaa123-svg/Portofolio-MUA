@@ -12,8 +12,8 @@
 
 @layer base {
     :root {
-        --theme-primary: #c05b7b;
-        --theme-secondary: #fce7ef;
+        --theme-primary: #2563eb;
+        --theme-secondary: #dbeafe;
         --theme-primary-900: color-mix(in srgb, var(--theme-primary) 78%, black);
         --theme-primary-800: color-mix(in srgb, var(--theme-primary) 68%, black);
         --theme-primary-700: color-mix(in srgb, var(--theme-primary) 58%, black);
@@ -27,9 +27,7 @@
     }
 
     .site-bg {
-        background:
-            radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--theme-secondary) 82%, white), #fff 38%),
-            linear-gradient(180deg, #fff7fa 0%, #ffffff 42%, #fff9fc 100%);
+        background-color: #f8fbff;
     }
 
     .public-header {
@@ -70,7 +68,7 @@
     }
 
     .admin-bg {
-        background: linear-gradient(180deg, #f8fafc, #eef2ff);
+        background-color: #f8fafc;
     }
 
     a {
@@ -175,14 +173,11 @@
 
     .admin-sidebar {
         background-color: var(--theme-primary);
-        background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12));
         box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
     }
 
     .admin-sidebar-glow {
-        background:
-            radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.32), transparent 45%),
-            radial-gradient(circle at 92% 90%, rgba(255, 255, 255, 0.18), transparent 38%);
+        background: transparent;
         pointer-events: none;
     }
 
@@ -268,5 +263,123 @@
         border-color: color-mix(in srgb, var(--theme-secondary) 62%, white);
         background-color: var(--theme-secondary-50);
         @apply flex items-center justify-between gap-4 rounded-xl px-4 py-3 text-sm;
+    }
+
+    .home-gallery-section {
+        background:
+            radial-gradient(1000px 420px at 8% -10%, color-mix(in srgb, var(--theme-primary) 22%, white), transparent 70%),
+            radial-gradient(900px 360px at 92% 115%, color-mix(in srgb, var(--theme-secondary) 76%, white), transparent 66%),
+            linear-gradient(
+                135deg,
+                color-mix(in srgb, var(--theme-secondary) 76%, white),
+                color-mix(in srgb, var(--theme-primary) 7%, white) 46%,
+                #ffffff
+            );
+        border-block: 1px solid color-mix(in srgb, var(--theme-primary) 18%, white);
+    }
+
+    .home-gallery-title {
+        color: var(--theme-primary);
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+
+    .home-gallery-link {
+        border-color: color-mix(in srgb, var(--theme-primary) 34%, white);
+        background-color: color-mix(in srgb, var(--theme-secondary) 36%, white);
+    }
+
+    .home-gallery-link:hover {
+        background-color: color-mix(in srgb, var(--theme-secondary) 56%, white);
+    }
+
+    .gallery-tile {
+        border: 1px solid color-mix(in srgb, var(--theme-primary) 16%, white);
+        background-color: color-mix(in srgb, var(--theme-secondary) 20%, white);
+        box-shadow: 0 16px 30px color-mix(in srgb, var(--theme-primary) 14%, transparent);
+        @apply block h-52 overflow-hidden rounded-2xl;
+    }
+
+    .gallery-tile:hover {
+        border-color: color-mix(in srgb, var(--theme-primary) 36%, white);
+    }
+
+    .login-page {
+        background:
+            radial-gradient(900px 420px at 8% 8%, color-mix(in srgb, var(--theme-secondary) 82%, white), transparent 70%),
+            radial-gradient(760px 360px at 92% 92%, color-mix(in srgb, var(--theme-primary) 14%, white), transparent 72%),
+            linear-gradient(160deg, #fbfdff, #f8fbff 42%, #f3f7fb);
+    }
+
+    .login-layout {
+        border-color: color-mix(in srgb, var(--theme-primary) 18%, white);
+        box-shadow: 0 24px 80px color-mix(in srgb, var(--theme-primary) 17%, transparent);
+        background-color: #ffffff;
+    }
+
+    .login-hero {
+        background:
+            linear-gradient(160deg, color-mix(in srgb, var(--theme-primary) 84%, black), color-mix(in srgb, var(--theme-primary) 64%, #0f172a) 60%, #0f172a);
+    }
+
+    .login-eyebrow {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.12);
+        letter-spacing: 0.2em;
+        @apply inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase text-white;
+    }
+
+    .login-hero-copy {
+        color: rgba(255, 255, 255, 0.88);
+    }
+
+    .login-orb {
+        position: absolute;
+        border-radius: 9999px;
+        filter: blur(2px);
+        pointer-events: none;
+    }
+
+    .login-orb-one {
+        width: 240px;
+        height: 240px;
+        right: -70px;
+        top: -90px;
+        background: radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
+    }
+
+    .login-orb-two {
+        width: 280px;
+        height: 280px;
+        left: -90px;
+        bottom: -110px;
+        background: radial-gradient(circle at 55% 55%, color-mix(in srgb, var(--theme-secondary) 45%, white), rgba(255, 255, 255, 0));
+    }
+
+    .login-form-wrap {
+        background:
+            linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--theme-secondary) 22%, white));
+    }
+
+    .login-field input {
+        border-color: color-mix(in srgb, var(--theme-primary) 18%, white);
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    .login-field input:focus {
+        border-color: color-mix(in srgb, var(--theme-primary) 60%, white);
+    }
+
+    .login-submit {
+        box-shadow: 0 14px 30px color-mix(in srgb, var(--theme-primary) 35%, transparent);
+    }
+
+    @media (max-width: 767px) {
+        .login-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .login-hero {
+            min-height: 220px;
+        }
     }
 }

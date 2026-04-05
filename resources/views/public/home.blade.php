@@ -44,11 +44,11 @@
     </div>
 </section>
 
-<section class="py-16" style="background-color: var(--theme-secondary);">
+<section class="home-gallery-section py-16">
     <div class="container mx-auto px-4">
         <div class="flex items-center justify-between gap-4 mb-8">
-            <h2 class="font-serif text-3xl" style="color: var(--theme-primary);">Galeri Makeup</h2>
-            <a href="{{ route('gallery') }}" class="btn-secondary">Buka Galeri</a>
+            <h2 class="home-gallery-title font-serif text-3xl">Galeri Makeup</h2>
+            <a href="{{ route('gallery') }}" class="btn-secondary home-gallery-link">Buka Galeri</a>
         </div>
         <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
             @foreach ($featuredPortfolios->take(8) as $item)
@@ -56,9 +56,9 @@
                     $coverImagePath = $item->cover_image ?: $item->images->first()?->image_path;
                     $coverImagePath = $coverImagePath ? preg_replace('#^/?storage/#', '', $coverImagePath) : null;
                 @endphp
-                <a href="{{ route('portfolio.show', $item->slug) }}" class="block rounded-2xl overflow-hidden h-52 border bg-white" style="border-color: var(--theme-secondary);">
+                <a href="{{ route('portfolio.show', $item->slug) }}" class="gallery-tile">
                     @if ($coverImagePath)
-                        <img src="{{ asset('storage/' . ltrim($coverImagePath, '/')) }}" class="h-full w-full object-cover hover:scale-105 transition" alt="{{ $item->title }}">
+                        <img src="{{ asset('storage/' . ltrim($coverImagePath, '/')) }}" class="h-full w-full object-cover transition duration-300 hover:scale-105" alt="{{ $item->title }}">
                     @else
                         <div class="h-full w-full grid place-items-center text-sm font-medium text-slate-500">
                             Foto belum tersedia

@@ -86,8 +86,8 @@ return new class extends Migration {
             $table->string('meta_title')->nullable();
             $table->text('meta_description')->nullable();
             $table->string('meta_keywords')->nullable();
-            $table->string('theme_primary', 30)->default('#c05b7b');
-            $table->string('theme_secondary', 30)->default('#fce7ef');
+            $table->string('theme_primary', 30)->default('#2563eb');
+            $table->string('theme_secondary', 30)->default('#dbeafe');
             $table->text('footer_text')->nullable();
             $table->timestamps();
             $table->softDeletes();

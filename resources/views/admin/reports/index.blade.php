@@ -1,88 +1,157 @@
 @extends('layouts.admin')
 @section('title', 'Laporan')
 @section('content')
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <h1 class="text-2xl font-semibold">Laporan</h1>
-    <div class="flex flex-wrap gap-2">
-        <a class="btn-secondary" href="{{ route('admin.reports.export-pdf', request()->query()) }}" target="_blank">Export PDF</a>
-        <a class="btn-secondary" href="{{ route('admin.reports.export-excel', request()->query()) }}">Export Excel</a>
-        <a class="btn-secondary" href="{{ route('admin.reports.print', request()->query()) }}" target="_blank">Print</a>
-    </div>
-</div>
+<style>
+    .report-hero {
+        background:
+            radial-gradient(circle at 85% 20%, rgba(56, 189, 248, .25), transparent 35%),
+            linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #334155 100%);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+    }
+    .report-kpi {
+        border: 1px solid #dbe4ef;
+        border-radius: 16px;
+        background: #fff;
+        padding: 16px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, .04);
+    }
+    .report-kpi p {
+        margin: 0;
+        color: #5b6b80;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        font-weight: 500;
+    }
+    .report-kpi h3 {
+        margin: 10px 0 0;
+        font-size: 24px;
+        color: #0f172a;
+        font-weight: 500;
+    }
+    .report-filter {
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #f8fafc;
+        padding: 12px;
+    }
+    .report-table th {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+    .report-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #0f172a;
+        background: #e2e8f0;
+    }
+    .report-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: #0ea5e9;
+    }
+    .report-actions a {
+        min-width: 70px;
+        text-align: center;
+    }
+</style>
 
-<form method="GET" class="grid md:grid-cols-5 gap-3 mb-6">
-    <label class="field"><span>Dari Tanggal</span><input type="date" class="input" name="from" value="{{ $from }}"></label>
-    <label class="field"><span>Sampai Tanggal</span><input type="date" class="input" name="to" value="{{ $to }}"></label>
-    <label class="field"><span>Keyword</span><input type="text" class="input" name="q" value="{{ $keyword }}" placeholder="Kode booking / customer"></label>
-    <label class="field">
-        <span>Status Booking</span>
-        <select class="input" name="status">
-            <option value="">Semua</option>
-            @foreach($statusOptions as $statusOption)
-                <option value="{{ $statusOption }}" @selected($status === $statusOption)>{{ $statusOption }}</option>
-            @endforeach
-        </select>
-    </label>
-    <label class="field">
-        <span>Status Pembayaran</span>
-        <select class="input" name="payment_status">
-            <option value="">Semua</option>
-            @foreach($paymentStatusOptions as $paymentStatusOption)
-                <option value="{{ $paymentStatusOption }}" @selected($paymentStatus === $paymentStatusOption)>{{ $paymentStatusOption }}</option>
-            @endforeach
-        </select>
-    </label>
-    <button class="btn-primary self-end">Filter</button>
-</form>
+<div class="mx-auto max-w-6xl space-y-6">
+    <section class="report-hero rounded-2xl px-6 py-5 text-white shadow-lg">
+        <p class="text-xs font-medium uppercase tracking-[0.18em] text-slate-300">Finance Dashboard</p>
+        <h1 class="mt-2 text-3xl font-medium">Laporan Keuangan</h1>
+        <p class="mt-1 text-sm text-slate-200">{{ $siteName }} | Periode {{ $from }} s/d {{ $to }}</p>
+    </section>
 
-<div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
-    <article class="admin-card"><p>Total Booking</p><h2>{{ $summary['total_bookings'] }}</h2></article>
-    <article class="admin-card"><p>Booking Pending</p><h2>{{ $summary['total_pending'] }}</h2></article>
-    <article class="admin-card"><p>Booking Confirmed</p><h2>{{ $summary['total_confirmed'] }}</h2></article>
-    <article class="admin-card"><p>Total Transaksi</p><h2>Rp {{ number_format($summary['total_transactions'], 0, ',', '.') }}</h2></article>
-    <article class="admin-card"><p>DP Verified</p><h2>Rp {{ number_format($summary['total_dp_verified'], 0, ',', '.') }}</h2></article>
-    <article class="admin-card"><p>DP Pending</p><h2>Rp {{ number_format($summary['total_dp_pending'], 0, ',', '.') }}</h2></article>
-</div>
+    <section class="grid gap-4 md:grid-cols-3">
+        <article class="report-kpi">
+            <p>Total Income</p>
+            <h3>Rp {{ number_format($summary['total_income_verified'], 0, ',', '.') }}</h3>
+        </article>
+        <article class="report-kpi">
+            <p>Total Outcome</p>
+            <h3>Rp {{ number_format($summary['total_outcome_verified'], 0, ',', '.') }}</h3>
+        </article>
+        <article class="report-kpi">
+            <p>Laba Bersih</p>
+            <h3 class="{{ $summary['net_income'] < 0 ? 'text-rose-700' : 'text-emerald-700' }}">
+                Rp {{ number_format($summary['net_income'], 0, ',', '.') }}
+            </h3>
+        </article>
+    </section>
 
-<div class="card-premium bg-white overflow-x-auto mb-8">
-    <h2 class="font-semibold mb-4">Rekap Booking</h2>
-    <table class="table-admin">
-        <thead><tr><th>Kode</th><th>Customer</th><th>Tanggal</th><th>Status</th><th>Total</th></tr></thead>
-        <tbody>
-        @forelse($bookings as $item)
-            <tr>
-                <td>{{ $item->booking_code }}</td>
-                <td>{{ $item->customer?->name }}</td>
-                <td>{{ $item->booking_date?->format('d M Y') }}</td>
-                <td>{{ $item->status }}</td>
-                <td>Rp {{ number_format($item->grand_total, 0, ',', '.') }}</td>
-            </tr>
-        @empty
-            <tr><td colspan="5">Tidak ada data booking pada rentang tanggal ini.</td></tr>
-        @endforelse
-        </tbody>
-    </table>
-    <div class="mt-4">{{ $bookings->links() }}</div>
-</div>
+    <section class="card-premium bg-white">
+        <form method="GET" class="report-filter grid gap-3 md:grid-cols-[1fr_1fr_auto_auto_auto]">
+            <label class="field">
+                <span>Dari Tanggal</span>
+                <input class="input" type="date" name="from" value="{{ $from }}" required>
+            </label>
+            <label class="field">
+                <span>Sampai Tanggal</span>
+                <input class="input" type="date" name="to" value="{{ $to }}" required>
+            </label>
+            <input type="hidden" name="order" value="{{ $order }}">
+            <button class="btn-primary self-end" type="submit">Filter</button>
+            <a class="btn-secondary self-end text-center" href="{{ route('admin.reports.index') }}">Reset</a>
+            <a class="btn-secondary self-end text-center" href="{{ route('admin.reports.index', ['from' => $from, 'to' => $to, 'order' => $order === 'asc' ? 'desc' : 'asc']) }}">
+                Urut {{ strtoupper($order === 'asc' ? 'desc' : 'asc') }}
+            </a>
+        </form>
+    </section>
 
-<div class="card-premium bg-white overflow-x-auto">
-    <h2 class="font-semibold mb-4">Rekap Pembayaran</h2>
-    <table class="table-admin">
-        <thead><tr><th>Booking</th><th>Pembayar</th><th>Tipe</th><th>Status</th><th>Nominal</th></tr></thead>
-        <tbody>
-        @forelse($payments as $payment)
-            <tr>
-                <td>{{ $payment->booking?->booking_code }}</td>
-                <td>{{ $payment->payer_name }}</td>
-                <td>{{ $payment->payment_type }}</td>
-                <td>{{ $payment->status }}</td>
-                <td>Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
-            </tr>
-        @empty
-            <tr><td colspan="5">Tidak ada data pembayaran pada rentang tanggal ini.</td></tr>
-        @endforelse
-        </tbody>
-    </table>
-    <div class="mt-4">{{ $payments->links() }}</div>
+    <section class="card-premium bg-white">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-medium text-slate-900">Transaksi Per Tanggal</h2>
+                <p class="text-sm text-slate-500">Pilih aksi untuk print atau export laporan harian.</p>
+            </div>
+            <span class="report-pill">
+                <span class="report-dot"></span>
+                {{ $transactionDates->count() }} tanggal transaksi
+            </span>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="table-admin report-table min-w-[760px]">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Tanggal</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($transactionDates as $index => $date)
+                        @php($dateQuery = ['from' => $date, 'to' => $date])
+                        <tr>
+                            <td>{{ $index + 1 }}</td>
+                            <td>
+                                <div class="font-normal text-slate-800">{{ \Carbon\Carbon::parse($date)->translatedFormat('d M Y') }}</div>
+                                <div class="text-xs text-slate-500">{{ \Carbon\Carbon::parse($date)->translatedFormat('l') }}</div>
+                            </td>
+                            <td>
+                                <div class="report-actions flex flex-wrap gap-2">
+                                    <a class="btn-secondary text-xs" href="{{ route('admin.reports.print', $dateQuery) }}" target="_blank">Print</a>
+                                    <a class="btn-secondary text-xs" href="{{ route('admin.reports.export-pdf', $dateQuery) }}" target="_blank">PDF</a>
+                                    <a class="btn-secondary text-xs" href="{{ route('admin.reports.export-excel', $dateQuery) }}">Excel</a>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="py-7 text-center text-slate-500">Belum ada transaksi pada rentang tanggal ini.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 @endsection

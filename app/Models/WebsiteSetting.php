@@ -18,6 +18,8 @@ class WebsiteSetting extends Model
         'contact_phone',
         'contact_email',
         'whatsapp_number',
+        'bank_account_number',
+        'bank_account_bank_name',
         'address',
         'google_maps_embed',
         'instagram_url',

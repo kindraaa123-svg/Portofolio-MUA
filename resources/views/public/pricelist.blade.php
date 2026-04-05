@@ -11,7 +11,10 @@
                     <div class="mt-4 space-y-3">
                         @foreach ($category->services as $service)
                             <div class="flex justify-between border-b border-rose-100 pb-2">
-                                <span>{{ $service->name }}</span>
+                                <div>
+                                    <p>{{ $service->name }}</p>
+                                    <p class="text-xs text-slate-500">{{ $service->duration_minutes }} menit</p>
+                                </div>
                                 <strong>Rp {{ number_format($service->price, 0, ',', '.') }}</strong>
                             </div>
                         @endforeach

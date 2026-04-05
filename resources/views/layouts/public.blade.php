@@ -11,8 +11,17 @@
     @endif
     <style>
         :root {
-            --theme-primary: {{ $globalSetting->theme_primary ?? '#c05b7b' }};
-            --theme-secondary: {{ $globalSetting->theme_secondary ?? '#fce7ef' }};
+            --theme-primary: {{ $globalSetting->theme_primary ?? '#2563eb' }};
+            --theme-secondary: {{ $globalSetting->theme_secondary ?? '#dbeafe' }};
+        }
+
+        body.site-bg {
+            background-color: #f8fafc !important;
+            background-image: none !important;
+        }
+
+        #modal-crop-gambar-global-public cropper-canvas {
+            background: #0f172a !important;
         }
     </style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -65,31 +74,39 @@
         <p>(c) {{ now()->year }} {{ $globalSetting->site_name ?? 'MUA Portfolio' }}. Hak cipta dilindungi.</p>
     </div>
 </footer>
-<div id="modal-crop-gambar-global-public" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/65 p-2 md:p-4 backdrop-blur-[2px]">
-    <div class="flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-2xl" style="max-height: 94vh;">
-        <h3 class="text-base font-semibold text-slate-900">Crop Gambar</h3>
-        <p class="mt-1 text-sm text-slate-500">Atur area foto, lalu simpan hasil crop.</p>
-        <div class="mt-3 min-h-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 p-2 mx-auto" style="height: clamp(360px, 62vh, 760px);">
-            <img id="crop-gambar-global-public" src="" class="h-full max-h-full w-full object-contain" alt="Crop gambar">
+<div id="modal-crop-gambar-global-public" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/75 p-3 md:p-5 backdrop-blur-sm">
+    <div class="flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(2,6,23,0.45)]" style="max-height: 94vh;">
+        <div class="border-b border-slate-200 bg-slate-50 px-4 py-4 md:px-6">
+            <h3 class="text-lg font-semibold text-slate-900">Atur Crop Gambar</h3>
+            <p class="mt-1 text-sm text-slate-600">Geser area crop lalu klik gunakan hasil crop untuk lanjut.</p>
         </div>
-        <div class="mt-4 border-t border-slate-100 pt-3">
-            <div class="mb-3">
-                <div class="mb-1 flex items-center justify-between">
-                    <label for="crop-zoom-public" class="text-sm font-medium text-slate-700">Zoom</label>
-                    <span id="crop-zoom-value-public" class="text-xs text-slate-500">100%</span>
-                </div>
-                <input id="crop-zoom-public" type="range" min="-0.8" max="8" step="0.05" value="0" class="w-full">
+
+        <div class="min-h-0 flex flex-1 px-4 py-4 md:px-6 md:py-5">
+            <div class="mx-auto h-full w-full rounded-2xl border border-slate-200 bg-slate-100 p-2 md:p-3">
+                <img id="crop-gambar-global-public" src="" class="h-full max-h-full w-full rounded-xl object-contain" alt="Crop gambar">
             </div>
         </div>
-        <div class="relative z-20 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-3">
-            <button type="button" class="btn-secondary" id="crop-batal-public">Batal</button>
-            <button type="button" class="btn-secondary" id="crop-lewati-public">Lewati</button>
-            <button type="button" class="btn-primary" id="crop-simpan-public">Gunakan Hasil Crop</button>
+
+        <div class="border-t border-slate-200 bg-white px-4 py-4 md:px-6">
+            <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                <div class="mb-2 flex items-center justify-between">
+                    <label for="crop-zoom-public" class="text-sm font-medium text-slate-700">Zoom</label>
+                    <span id="crop-zoom-value-public" class="text-xs font-medium text-slate-500">100%</span>
+                </div>
+                <input id="crop-zoom-public" type="range" min="-0.8" max="8" step="0.05" value="0" class="w-full accent-blue-600">
+            </div>
+
+            <div class="relative z-20 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button type="button" class="btn-secondary w-full sm:w-auto" id="crop-batal-public">Batal</button>
+                <button type="button" class="btn-secondary w-full sm:w-auto" id="crop-lewati-public">Lewati</button>
+                <button type="button" class="btn-primary w-full sm:w-auto" id="crop-simpan-public">Gunakan Hasil Crop</button>
+            </div>
         </div>
     </div>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const CROP_ENABLED = false;
     const modal = document.getElementById('modal-crop-gambar-global-public');
     const cropImage = document.getElementById('crop-gambar-global-public');
     const btnSimpan = document.getElementById('crop-simpan-public');
@@ -97,7 +114,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnBatal = document.getElementById('crop-batal-public');
     const zoomInput = document.getElementById('crop-zoom-public');
     const zoomValue = document.getElementById('crop-zoom-value-public');
-    const CROP_TEMPLATE = '<cropper-canvas background><cropper-image rotatable scalable translatable></cropper-image><cropper-shade theme-color="rgba(15,23,42,0.48)"></cropper-shade><cropper-handle action="select" plain></cropper-handle><cropper-selection initial-coverage="0.84" movable resizable zoomable><cropper-grid role="grid" bordered covered></cropper-grid><cropper-crosshair centered></cropper-crosshair><cropper-handle action="move" theme-color="rgba(255,255,255,0.38)"></cropper-handle><cropper-handle action="n-resize"></cropper-handle><cropper-handle action="e-resize"></cropper-handle><cropper-handle action="s-resize"></cropper-handle><cropper-handle action="w-resize"></cropper-handle><cropper-handle action="ne-resize"></cropper-handle><cropper-handle action="nw-resize"></cropper-handle><cropper-handle action="se-resize"></cropper-handle><cropper-handle action="sw-resize"></cropper-handle></cropper-selection></cropper-canvas>';
+    const CROP_TEMPLATE = '<cropper-canvas><cropper-image rotatable scalable translatable></cropper-image><cropper-shade theme-color="rgba(15,23,42,0.55)"></cropper-shade><cropper-handle action="select" plain></cropper-handle><cropper-selection initial-coverage="0.96" aspect-ratio="1" movable zoomable><cropper-grid role="grid" bordered covered></cropper-grid><cropper-crosshair centered></cropper-crosshair><cropper-handle action="move" theme-color="rgba(255,255,255,0.44)"></cropper-handle></cropper-selection></cropper-canvas>';
+
+    if (!CROP_ENABLED) {
+        modal?.remove();
+        return;
+    }
 
     if (!modal || !window.Cropper) {
         return;
@@ -234,29 +256,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             cropperImageEl.$center('contain');
                         }
 
-                        let targetLevel = 0.65;
-                        if (currentImageMetrics) {
-                            const containScale = Math.min(
-                                currentImageMetrics.stageWidth / currentImageMetrics.naturalWidth,
-                                currentImageMetrics.stageHeight / currentImageMetrics.naturalHeight
-                            );
-                            const coverScale = Math.max(
-                                currentImageMetrics.stageWidth / currentImageMetrics.naturalWidth,
-                                currentImageMetrics.stageHeight / currentImageMetrics.naturalHeight
-                            );
-                            const factor = containScale > 0 ? (coverScale / containScale) : 1;
-                            targetLevel = clamp((factor - 1) + 0.2, -0.8, 8);
-                        }
-
                         currentZoomLevel = 0;
-                        applyZoomLevel(targetLevel);
                         if (zoomInput) {
-                            zoomInput.value = String(currentZoomLevel);
+                            zoomInput.value = '0';
                         }
+                        setZoomLabel(currentZoomLevel);
 
                         const selection = typeof cropper.getCropperSelection === 'function' ? cropper.getCropperSelection() : null;
                         if (selection) {
-                            selection.initialCoverage = 0.84;
+                            selection.aspectRatio = 1;
+                            selection.initialCoverage = 0.82;
                             if (typeof selection.$initSelection === 'function') {
                                 selection.$initSelection(true, true);
                             }
@@ -274,36 +283,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const probe = new Image();
             probe.onload = () => {
                 if (stage) {
-                    const maxWidth = Math.min(Math.floor(window.innerWidth * 0.78), 1120);
-                    const maxHeight = Math.min(Math.floor(window.innerHeight * 0.72), 760);
-                    const ratio = probe.naturalWidth / Math.max(probe.naturalHeight, 1);
+                    const maxWidth = Math.min(Math.floor(window.innerWidth * 0.86), 980);
+                    const maxHeight = Math.min(Math.floor(window.innerHeight * 0.62), 620);
+                    const squareSize = Math.max(320, Math.min(maxWidth, maxHeight));
 
-                    let stageWidth = maxWidth;
-                    let stageHeight = stageWidth / ratio;
-
-                    if (stageHeight > maxHeight) {
-                        stageHeight = maxHeight;
-                        stageWidth = stageHeight * ratio;
-                    }
-
-                    if (stageWidth < 420) {
-                        stageWidth = 420;
-                        stageHeight = stageWidth / ratio;
-                    }
-
-                    if (stageHeight < 260) {
-                        stageHeight = 260;
-                        stageWidth = Math.min(maxWidth, stageHeight * ratio);
-                    }
-
-                    stage.style.width = `${Math.round(stageWidth)}px`;
-                    stage.style.height = `${Math.round(stageHeight)}px`;
+                    stage.style.width = `${Math.round(squareSize)}px`;
+                    stage.style.maxWidth = '100%';
+                    stage.style.height = `${Math.round(squareSize)}px`;
 
                     currentImageMetrics = {
                         naturalWidth: probe.naturalWidth,
                         naturalHeight: probe.naturalHeight,
-                        stageWidth,
-                        stageHeight,
+                        stageWidth: squareSize,
+                        stageHeight: squareSize,
                     };
                 }
 
@@ -327,8 +319,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof cropper.getCroppedCanvas === 'function') {
             try {
                 return cropper.getCroppedCanvas({
-                    maxWidth: 2600,
-                    maxHeight: 2600,
+                    width: 1080,
+                    height: 1080,
+                    maxWidth: 1080,
+                    maxHeight: 1080,
                     imageSmoothingQuality: 'high',
                 });
             } catch (e) {
@@ -341,7 +335,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selection && typeof selection.$toCanvas === 'function') {
                 try {
                     return await selection.$toCanvas({
-                        width: 1800,
+                        width: 1080,
+                        height: 1080,
                     });
                 } catch (e) {
                     return null;

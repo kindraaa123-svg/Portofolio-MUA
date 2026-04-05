@@ -10,7 +10,9 @@ use App\Models\Booking;
 use App\Models\BookingDetail;
 use App\Models\BookingPayment;
 use App\Models\Customer;
+use App\Models\OperationalHour;
 use App\Models\Service;
+use App\Models\WebsiteSetting;
 use App\Support\ActivityLogger;
 use App\Support\FonnteWhatsApp;
 use Carbon\Carbon;
@@ -36,9 +38,10 @@ class BookingController extends Controller
     {
         $validated = $request->validate([
             'date' => ['required', 'date'],
+            'service_id' => ['required', 'exists:services,id'],
         ]);
 
-        return response()->json(['times' => $this->availableTimesByDate($validated['date'])]);
+        return response()->json(['times' => $this->availableTimesByDate($validated['date'], (int) $validated['service_id'])]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -57,8 +60,6 @@ class BookingController extends Controller
             'addon_ids.*' => ['exists:addons,id'],
             'notes' => ['nullable', 'string'],
             'payer_name' => ['required', 'string', 'max:150'],
-            'bank_name' => ['nullable', 'string', 'max:120'],
-            'transfer_at' => ['required', 'date'],
             'dp_proof' => ['required', 'image', 'max:4096'],
         ]);
 
@@ -68,7 +69,7 @@ class BookingController extends Controller
         $service = Service::findOrFail($validated['service_id']);
         $addons = Addon::whereIn('id', $validated['addon_ids'] ?? [])->get();
 
-        $availableTimes = $this->availableTimesByDate($validated['booking_date']);
+        $availableTimes = $this->availableTimesByDate($validated['booking_date'], (int) $validated['service_id']);
         if (! in_array($validated['booking_time'], $availableTimes, true)) {
             return back()->withErrors(['booking_time' => 'Jam booking sudah tidak tersedia, silakan pilih jam lain.'])->withInput();
         }
@@ -132,9 +133,9 @@ class BookingController extends Controller
                 'booking_id' => $booking->id,
                 'payment_type' => 'dp',
                 'payer_name' => $validated['payer_name'],
-                'bank_name' => $validated['bank_name'] ?? null,
+                'bank_name' => null,
                 'amount' => $dpAmount,
-                'paid_at' => $validated['transfer_at'],
+                'paid_at' => now(),
                 'proof_image' => $request->file('dp_proof')->store('payments/dp', 'public'),
                 'status' => 'pending',
             ]);
@@ -149,11 +150,55 @@ class BookingController extends Controller
         });
 
         try {
+            $websiteName = WebsiteSetting::query()->value('site_name') ?: (config('app.name') ?: 'MUA Studio');
+
             if (! empty($validated['email'])) {
+                $customerEmailBody = implode("\n", [
+                    'Yth. ' . $validated['name'] . ',',
+                    '',
+                    'Terima kasih telah melakukan reservasi layanan makeup melalui website kami.',
+                    'Reservasi Anda telah kami terima dengan detail berikut:',
+                    '',
+                    "Kode Booking : {$booking->booking_code}",
+                    'Tanggal      : ' . ($booking->booking_date?->format('d-m-Y') ?? '-'),
+                    "Jam          : {$booking->booking_time}",
+                    'Total        : Rp ' . number_format((float) $booking->grand_total, 0, ',', '.'),
+                    'DP (50%)     : Rp ' . number_format((float) $booking->dp_amount, 0, ',', '.'),
+                    '',
+                    'Status reservasi saat ini: Menunggu verifikasi pembayaran DP.',
+                    'Tim kami akan menghubungi Anda kembali setelah proses verifikasi selesai.',
+                    '',
+                    'Hormat kami,',
+                    $websiteName,
+                ]);
+
                 Mail::raw(
-                    'Reservasi Anda berhasil dicatat dengan kode: ' . $booking->booking_code . '. Booking akan dikonfirmasi setelah verifikasi DP 50%.',
+                    $customerEmailBody,
                     function ($message) use ($validated): void {
                         $message->to($validated['email'])->subject('Konfirmasi Reservasi Makeup');
+                    }
+                );
+            }
+
+            $ownerEmail = WebsiteSetting::query()->value('contact_email');
+            if (! empty($ownerEmail)) {
+                Mail::raw(
+                    implode("\n", [
+                        'Notifikasi Reservasi Baru dari Website',
+                        '',
+                        "Kode Booking: {$booking->booking_code}",
+                        "Nama Customer: {$validated['name']}",
+                        'Email Customer: ' . ($validated['email'] ?? '-'),
+                        "No. WhatsApp  : {$validated['phone']}",
+                        'Tanggal       : ' . ($booking->booking_date?->format('d-m-Y') ?? '-'),
+                        "Jam           : {$booking->booking_time}",
+                        'Total         : Rp ' . number_format((float) $booking->grand_total, 0, ',', '.'),
+                        'DP (50%)      : Rp ' . number_format((float) $booking->dp_amount, 0, ',', '.'),
+                        '',
+                        'Silakan cek dashboard admin untuk proses verifikasi dan tindak lanjut.',
+                    ]),
+                    function ($message) use ($ownerEmail): void {
+                        $message->to($ownerEmail)->subject('Reservasi Baru Website');
                     }
                 );
             }
@@ -161,17 +206,29 @@ class BookingController extends Controller
             Log::warning('Email booking notification failed', ['error' => $e->getMessage()]);
         }
 
-        app(FonnteWhatsApp::class)->sendReservationCreated($booking);
-
         return back()->with('success', 'Reservasi berhasil dibuat. Booking akan dikonfirmasi setelah admin memverifikasi pembayaran DP 50%.');
     }
 
-    protected function availableTimesByDate(string $date): array
+    protected function availableTimesByDate(string $date, int $serviceId): array
     {
+        $selectedService = Service::query()->find($serviceId);
+        if (! $selectedService) {
+            return [];
+        }
+
+        $selectedDurationMinutes = max(1, (int) $selectedService->duration_minutes);
         $dayOfWeek = Carbon::parse($date)->dayOfWeek;
 
         $blockedSchedules = BlockedSchedule::whereDate('blocked_date', $date)->get();
         if ($blockedSchedules->contains(fn ($item) => $item->is_full_day)) {
+            return [];
+        }
+
+        $operationalHour = OperationalHour::query()
+            ->where('day_of_week', $dayOfWeek)
+            ->first();
+
+        if (! $operationalHour || $operationalHour->is_closed || ! $operationalHour->open_time || ! $operationalHour->close_time) {
             return [];
         }
 
@@ -180,27 +237,65 @@ class BookingController extends Controller
             ->orderBy('start_time')
             ->get();
 
+        $openAt = Carbon::parse($date . ' ' . substr((string) $operationalHour->open_time, 0, 8));
+        $closeAt = Carbon::parse($date . ' ' . substr((string) $operationalHour->close_time, 0, 8));
+
+        if ($openAt->gte($closeAt)) {
+            return [];
+        }
+
+        $activeBookings = Booking::query()
+            ->with([
+                'details' => function ($query): void {
+                    $query->where('type', 'service')
+                        ->with('service:id,duration_minutes');
+                },
+            ])
+            ->whereDate('booking_date', $date)
+            ->whereIn('status', ['pending', 'confirmed', 'on_process'])
+            ->get();
+
         $times = [];
-        foreach ($slots as $slot) {
-            $isBlocked = $blockedSchedules->contains(function ($block) use ($slot) {
+        for ($candidate = $openAt->copy(); $candidate->lt($closeAt); $candidate->addHour()) {
+            $candidateTime = $candidate->format('H:i:s');
+            $candidateEnd = $candidate->copy()->addMinutes($selectedDurationMinutes);
+
+            if ($candidateEnd->gt($closeAt)) {
+                continue;
+            }
+
+            $isBlocked = $blockedSchedules->contains(function ($block) use ($candidate, $candidateEnd, $date) {
                 if (! $block->start_time || ! $block->end_time) {
                     return false;
                 }
 
-                return $slot->start_time >= $block->start_time && $slot->start_time < $block->end_time;
+                $blockStart = Carbon::parse($date . ' ' . substr((string) $block->start_time, 0, 8));
+                $blockEnd = Carbon::parse($date . ' ' . substr((string) $block->end_time, 0, 8));
+
+                return $candidate->lt($blockEnd) && $candidateEnd->gt($blockStart);
             });
 
             if ($isBlocked) {
                 continue;
             }
 
-            $currentCount = Booking::whereDate('booking_date', $date)
-                ->whereTime('booking_time', $slot->start_time)
-                ->whereIn('status', ['pending', 'confirmed', 'on_process'])
-                ->count();
+            $slotForCapacity = $slots->first(function ($slot) use ($candidateTime) {
+                return $candidateTime >= $slot->start_time && $candidateTime < $slot->end_time;
+            });
+            $maxBookings = (int) ($slotForCapacity?->max_bookings ?? 1);
 
-            if ($currentCount < $slot->max_bookings) {
-                $times[] = $slot->start_time;
+            $currentCount = $activeBookings->filter(function (Booking $booking) use ($candidate, $candidateEnd, $date) {
+                $bookingStart = Carbon::parse($date . ' ' . substr((string) $booking->booking_time, 0, 8));
+
+                $serviceDetail = $booking->details->first();
+                $durationMinutes = max(1, (int) ($serviceDetail?->service?->duration_minutes ?? 60));
+                $bookingEnd = $bookingStart->copy()->addMinutes($durationMinutes);
+
+                return $candidate->lt($bookingEnd) && $candidateEnd->gt($bookingStart);
+            })->count();
+
+            if ($currentCount < $maxBookings) {
+                $times[] = $candidate->format('H:i');
             }
         }
 

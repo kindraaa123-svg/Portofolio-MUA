@@ -92,9 +92,11 @@ Route::prefix('admin')->middleware('auth403')->name('admin.')->group(function ()
     Route::delete('/pricelist/service/{service}', [ServiceController::class, 'destroyService'])->middleware('permission:service.delete')->name('services.destroy');
     Route::delete('/pricelist/addon/{addon}', [ServiceController::class, 'destroyAddon'])->middleware('permission:service.delete')->name('addons.destroy');
 
-    Route::get('/reservasi', [AdminBookingController::class, 'index'])->middleware('permission:booking.view')->name('bookings.index');
+    Route::get('/kelola-reservasi', [AdminBookingController::class, 'index'])->middleware('permission:booking.view')->name('bookings.index');
     Route::get('/validasi-pembayaran', [AdminBookingController::class, 'paymentValidations'])->middleware('permission:booking.verify-payment')->name('bookings.payment-validations');
     Route::post('/reservasi/{booking}/status', [AdminBookingController::class, 'updateStatus'])->middleware('permission:booking.update')->name('bookings.update-status');
+    Route::post('/reservasi/{booking}/settlement-status', [AdminBookingController::class, 'setSettlementStatus'])->middleware('permission:booking.update')->name('bookings.set-settlement-status');
+    Route::post('/reservasi/{booking}/pelunasan', [AdminBookingController::class, 'storeFinalPayment'])->middleware('permission:booking.update')->name('bookings.store-final-payment');
     Route::post('/reservasi/payment/{payment}/verify', [AdminBookingController::class, 'verifyPayment'])->middleware('permission:booking.verify-payment')->name('bookings.verify-payment');
     Route::post('/reservasi/slot', [AdminBookingController::class, 'storeSlot'])->middleware('permission:booking.update')->name('bookings.store-slot');
     Route::post('/reservasi/blocked-schedule', [AdminBookingController::class, 'storeBlockedSchedule'])->middleware('permission:booking.update')->name('bookings.store-blocked');

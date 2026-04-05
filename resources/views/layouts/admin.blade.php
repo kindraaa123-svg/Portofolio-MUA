@@ -12,7 +12,7 @@
 
         .admin-sidebar {
             background-color: var(--theme-primary) !important;
-            background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12)) !important;
+            background-image: none !important;
         }
 
         /* Force hover sidebar to always use selected secondary color */
@@ -24,59 +24,40 @@
             box-shadow: inset 4px 0 0 var(--theme-primary), 0 8px 16px rgba(2, 6, 23, 0.18);
             transform: translateX(2px);
         }
+
+        @media (min-width: 1024px) {
+            body.admin-layout {
+                overflow: hidden;
+            }
+
+            .admin-shell {
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .admin-sidebar-panel {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 300px;
+                height: 100vh;
+            }
+
+            .admin-main {
+                margin-left: 300px;
+                height: 100vh;
+                min-height: 0;
+                overflow-y: auto;
+            }
+        }
     </style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="admin-bg min-h-screen text-slate-800">
-<div class="min-h-screen grid lg:grid-cols-[300px_1fr]">
-    <aside
-        id="admin-sidebar"
-        class="admin-sidebar relative overflow-hidden text-white p-4 lg:p-5 flex flex-col lg:h-screen lg:sticky lg:top-0"
-        style="background-color: {{ $globalSetting->theme_primary ?? '#c05b7b' }}; background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12));"
-    >
-        <div class="admin-sidebar-glow absolute inset-0"></div>
+<body class="admin-layout admin-bg min-h-screen text-slate-800">
+<div class="admin-shell min-h-screen">
+    @include('layouts.partials.admin-sidebar')
 
-        <div class="relative z-10 admin-user-chip rounded-2xl p-3">
-            <a href="{{ route('admin.dashboard') }}" class="block min-w-0">
-                <div class="min-w-0">
-                    <p class="text-xs text-white/75">Selamat Datang</p>
-                    <p class="font-semibold truncate">{{ auth()->user()?->name }}</p>
-                </div>
-            </a>
-        </div>
-
-        <div class="relative z-10 flex-1 min-h-0 overflow-y-auto mt-4 pr-1 space-y-4">
-            <div class="admin-menu-section space-y-2 text-sm">
-                <p class="admin-menu-label">Menu Utama</p>
-                @if(auth()->user()?->hasPermission('dashboard.view'))<a class="admin-link {{ request()->routeIs('admin.dashboard') ? 'admin-link-active' : '' }}" href="{{ route('admin.dashboard') }}"><span>Beranda Admin</span></a>@endif
-                @if(auth()->user()?->hasPermission('portfolio.view'))<a class="admin-link {{ request()->routeIs('admin.portfolios.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.portfolios.index') }}"><span>Portfolio</span></a>@endif
-                @if(auth()->user()?->hasPermission('service.view'))<a class="admin-link {{ request()->routeIs('admin.services.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.services.index') }}"><span>Daftar Harga</span></a>@endif
-                @if(auth()->user()?->hasPermission('booking.verify-payment'))<a class="admin-link {{ request()->routeIs('admin.bookings.payment-validations') ? 'admin-link-active' : '' }}" href="{{ route('admin.bookings.payment-validations') }}"><span>Validasi Pembayaran</span></a>@endif
-                @if(auth()->user()?->hasPermission('report.view'))<a class="admin-link {{ request()->routeIs('admin.reports.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.reports.index') }}"><span>Laporan</span></a>@endif
-                @if(auth()->user()?->hasPermission('backup.view'))<a class="admin-link {{ request()->routeIs('admin.backup.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.backup.index') }}"><span>Backup Database</span></a>@endif
-            </div>
-
-            <div class="admin-menu-section space-y-2 text-sm">
-                <p class="admin-menu-label">Manajemen</p>
-                @if(auth()->user()?->hasPermission('recycle.view'))<a class="admin-link {{ request()->routeIs('admin.recycle-bin.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.recycle-bin.index') }}"><span>Recycle Bin</span></a>@endif
-                @if(auth()->user()?->hasPermission('access.view'))<a class="admin-link {{ request()->routeIs('admin.access.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.access.index') }}"><span>Hak Akses</span></a>@endif
-                @if(auth()->user()?->hasPermission('user.view'))<a class="admin-link {{ request()->routeIs('admin.users.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.users.index') }}"><span>User Data</span></a>@endif
-                @if(auth()->user()?->hasPermission('activity.view'))<a class="admin-link {{ request()->routeIs('admin.activity-logs.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.activity-logs.index') }}"><span>Log Aktivitas</span></a>@endif
-                @if(auth()->user()?->hasPermission('setting.view'))<a class="admin-link {{ request()->routeIs('admin.operational-hours.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.operational-hours.index') }}"><span>Jam Operasional</span></a>@endif
-                @if(auth()->user()?->hasPermission('setting.view'))<a class="admin-link {{ request()->routeIs('admin.settings.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.settings.index') }}"><span>Pengaturan Website</span></a>@endif
-            </div>
-        </div>
-
-        <div class="relative z-10 mt-4 pt-4 admin-sidebar-divider space-y-2">
-            <a class="admin-link {{ request()->routeIs('admin.profile.*') ? 'admin-link-active' : '' }}" href="{{ route('admin.profile.index') }}"><span>Profile</span></a>
-            <form method="POST" action="{{ route('admin.logout') }}">
-                @csrf
-                <button class="btn-admin-logout">Keluar</button>
-            </form>
-        </div>
-    </aside>
-
-    <section class="p-6 lg:p-8">
+    <section class="admin-main p-6 lg:p-8">
         @if (session('success'))
             <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">{{ session('success') }}</div>
         @endif
@@ -265,10 +246,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
 
                         if (typeof cropperImageEl.$center === 'function') {
-                            cropperImageEl.$center('contain');
+                            cropperImageEl.$center('cover');
                         }
 
-                        let targetLevel = 0.65;
+                        let targetLevel = 0;
                         if (currentImageMetrics) {
                             const containScale = Math.min(
                                 currentImageMetrics.stageWidth / currentImageMetrics.naturalWidth,
@@ -279,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 currentImageMetrics.stageHeight / currentImageMetrics.naturalHeight
                             );
                             const factor = containScale > 0 ? (coverScale / containScale) : 1;
-                            targetLevel = clamp((factor - 1) + 0.2, -0.8, 8);
+                            targetLevel = clamp((factor - 1) + 0.35, -0.8, 8);
                         }
 
                         currentZoomLevel = 0;
@@ -290,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         const selection = typeof cropper.getCropperSelection === 'function' ? cropper.getCropperSelection() : null;
                         if (selection) {
-                            selection.initialCoverage = 0.84;
+                            selection.initialCoverage = 0.98;
                             if (typeof selection.$initSelection === 'function') {
                                 selection.$initSelection(true, true);
                             }
@@ -308,29 +289,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const probe = new Image();
             probe.onload = () => {
                 if (stage) {
-                    const maxWidth = Math.min(Math.floor(window.innerWidth * 0.78), 1120);
-                    const maxHeight = Math.min(Math.floor(window.innerHeight * 0.72), 760);
-                    const ratio = probe.naturalWidth / Math.max(probe.naturalHeight, 1);
+                    const maxWidth = Math.min(Math.floor(window.innerWidth * 0.86), 980);
+                    const maxHeight = Math.min(Math.floor(window.innerHeight * 0.62), 620);
+                    const stageWidth = Math.max(320, maxWidth);
+                    const stageHeight = Math.max(320, maxHeight);
 
-                    let stageWidth = maxWidth;
-                    let stageHeight = stageWidth / ratio;
-
-                    if (stageHeight > maxHeight) {
-                        stageHeight = maxHeight;
-                        stageWidth = stageHeight * ratio;
-                    }
-
-                    if (stageWidth < 420) {
-                        stageWidth = 420;
-                        stageHeight = stageWidth / ratio;
-                    }
-
-                    if (stageHeight < 260) {
-                        stageHeight = 260;
-                        stageWidth = Math.min(maxWidth, stageHeight * ratio);
-                    }
-
-                    stage.style.width = `${Math.round(stageWidth)}px`;
+                    stage.style.width = '100%';
+                    stage.style.maxWidth = '100%';
                     stage.style.height = `${Math.round(stageHeight)}px`;
 
                     currentImageMetrics = {
