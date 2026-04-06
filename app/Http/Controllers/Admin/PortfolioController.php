@@ -30,7 +30,11 @@ class PortfolioController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.portfolio.index', compact('portfolios', 'search'));
+        return view('admin.portfolio.index', [
+            'portfolios' => $portfolios,
+            'search' => $search,
+            'categories' => PortfolioCategory::orderBy('name')->get(),
+        ]);
     }
 
     public function create()

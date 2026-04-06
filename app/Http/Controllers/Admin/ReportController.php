@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingPayment;
+use App\Models\MonthlyExpense;
 use App\Models\WebsiteSetting;
 use App\Support\ActivityLogger;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response as ResponseFacade;
 use Illuminate\Support\Str;
@@ -26,6 +28,47 @@ class ReportController extends Controller
             'statusOptions' => ['pending', 'confirmed', 'on_process', 'completed', 'cancelled'],
             'paymentStatusOptions' => ['pending', 'verified', 'rejected'],
         ]);
+    }
+
+    public function storeMonthlyExpense(Request $request)
+    {
+        $validated = $request->validate([
+            'period_month' => ['nullable', 'date_format:Y-m'],
+            'expense_name' => ['required', 'string', 'max:190'],
+            'amount' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $periodInput = $validated['period_month'] ?? Carbon::now()->format('Y-m');
+        $periodMonth = Carbon::createFromFormat('Y-m', $periodInput)->startOfMonth()->toDateString();
+
+        $expense = MonthlyExpense::query()->updateOrCreate(
+            ['period_month' => $periodMonth],
+            [
+                'amount' => (float) $validated['amount'],
+                'note' => $validated['expense_name'],
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
+            ]
+        );
+
+        ActivityLogger::log('report', 'set-monthly-expense', $expense, [
+            'period_month' => $periodMonth,
+            'amount' => (float) $validated['amount'],
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Pengeluaran bulanan berhasil disimpan.',
+                'expense' => [
+                    'period_month' => $expense->period_month?->format('Y-m-d'),
+                    'period_label' => $expense->period_month?->translatedFormat('F Y'),
+                    'amount' => (float) $expense->amount,
+                    'expense_name' => $expense->note,
+                ],
+            ]);
+        }
+
+        return back()->with('success', 'Pengeluaran bulanan berhasil disimpan.');
     }
 
     public function exportExcel(Request $request)
@@ -65,6 +108,8 @@ class ReportController extends Controller
         $rows[] = ['Laporan Laba Rugi (Cash Basis)'];
         $rows[] = ['Total Income (Verified)', (string) $report['summary']['total_income_verified']];
         $rows[] = ['Total Outcome (Verified)', (string) $report['summary']['total_outcome_verified']];
+        $rows[] = ['Outcome dari transaksi verified', (string) $report['summary']['total_outcome_verified_payments']];
+        $rows[] = ['Outcome dari pengeluaran bulanan manual', (string) $report['summary']['total_outcome_manual']];
         $rows[] = ['Laba Bersih', (string) $report['summary']['net_income']];
         $rows[] = [];
         $rows[] = ['Rincian Income/Outcome Harian'];
@@ -221,6 +266,15 @@ class ReportController extends Controller
             return $type === 'refund' || (float) $payment->amount < 0;
         });
 
+        $manualExpenses = MonthlyExpense::query()
+            ->whereBetween('period_month', [$fromDate->copy()->startOfMonth()->toDateString(), $toDate->copy()->startOfMonth()->toDateString()])
+            ->orderByDesc('period_month')
+            ->get();
+        $manualOutcome = (float) $manualExpenses->sum('amount');
+        $verifiedOutcome = (float) $outcomePayments->sum(function ($payment) {
+            return abs((float) $payment->amount);
+        });
+
         $dailyFinancialRows = $verifiedPayments
             ->groupBy(function ($payment) {
                 return optional($payment->paid_at ?? $payment->created_at)->format('Y-m-d');
@@ -267,14 +321,15 @@ class ReportController extends Controller
             'filters' => $filters,
             'transactionDates' => $transactionDates,
             'dailyFinancialRows' => $dailyFinancialRows,
+            'monthlyExpenses' => MonthlyExpense::query()->orderByDesc('period_month')->take(12)->get(),
+            'manualExpenseInputMonth' => now()->format('Y-m'),
+            'manualOutcome' => $manualOutcome,
             'summary' => [
                 'total_income_verified' => (float) $incomePayments->sum('amount'),
-                'total_outcome_verified' => (float) $outcomePayments->sum(function ($payment) {
-                    return abs((float) $payment->amount);
-                }),
-                'net_income' => (float) $incomePayments->sum('amount') - (float) $outcomePayments->sum(function ($payment) {
-                    return abs((float) $payment->amount);
-                }),
+                'total_outcome_verified_payments' => $verifiedOutcome,
+                'total_outcome_manual' => $manualOutcome,
+                'total_outcome_verified' => $verifiedOutcome + $manualOutcome,
+                'net_income' => (float) $incomePayments->sum('amount') - ($verifiedOutcome + $manualOutcome),
             ],
             'bookings' => $bookings,
             'payments' => $payments,

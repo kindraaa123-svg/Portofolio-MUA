@@ -44,7 +44,7 @@
     <div class="meta">
         Periode: {{ $from }} s/d {{ $to }}<br>
         Tanggal Cetak: {{ $generatedAt }}<br>
-        Basis Pengakuan: <strong>Cash Basis (hanya pembayaran status verified)</strong>
+        Basis Pengakuan: <strong>Cash Basis (pembayaran verified + pengeluaran bulanan manual)</strong>
     </div>
 
     <p class="section-title">Laporan Laba Rugi</p>
@@ -57,6 +57,14 @@
             <tr>
                 <td>Total Outcome (Verified)</td>
                 <td class="amount">Rp {{ number_format($summary['total_outcome_verified'], 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td>Outcome dari transaksi verified</td>
+                <td class="amount">Rp {{ number_format($summary['total_outcome_verified_payments'], 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td>Outcome dari pengeluaran bulanan manual</td>
+                <td class="amount">Rp {{ number_format($summary['total_outcome_manual'], 0, ',', '.') }}</td>
             </tr>
             <tr class="strong">
                 <td>Laba Bersih Periode</td>
@@ -92,7 +100,7 @@
     </table>
 
     <p class="notes">
-        Catatan: Income diakui hanya saat pembayaran sudah diverifikasi. Outcome diakui dari transaksi verified bertipe refund/nominal negatif.
+        Catatan: Income diakui saat pembayaran verified. Outcome mencakup refund/nominal negatif verified dan pengeluaran bulanan manual.
     </p>
 
     <script>

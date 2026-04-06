@@ -14,7 +14,7 @@
     Laporan Keuangan Profesional (Income & Outcome)<br>
     Periode: {{ $from }} s/d {{ $to }}<br>
     Tanggal Cetak: {{ $generatedAt }}<br>
-    Basis Pengakuan: Cash Basis (hanya pembayaran status verified)
+    Basis Pengakuan: Cash Basis (pembayaran verified + pengeluaran bulanan manual)
 </div>
 
 <h2>Laporan Laba Rugi</h2>
@@ -26,6 +26,14 @@
     <tr>
         <td>Total Outcome (Verified)</td>
         <td class="amount">Rp {{ number_format($summary['total_outcome_verified'], 0, ',', '.') }}</td>
+    </tr>
+    <tr>
+        <td>Outcome dari transaksi verified</td>
+        <td class="amount">Rp {{ number_format($summary['total_outcome_verified_payments'], 0, ',', '.') }}</td>
+    </tr>
+    <tr>
+        <td>Outcome dari pengeluaran bulanan manual</td>
+        <td class="amount">Rp {{ number_format($summary['total_outcome_manual'], 0, ',', '.') }}</td>
     </tr>
     <tr>
         <td><strong>Laba Bersih Periode</strong></td>

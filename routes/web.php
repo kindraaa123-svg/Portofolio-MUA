@@ -63,6 +63,10 @@ Route::get('/api/available-times', [BookingController::class, 'availableTimes'])
 
 Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
 Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
+Route::get('/forgot-password', [AdminAuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [AdminAuthController::class, 'sendResetLink'])->name('password.email');
+Route::get('/reset-password/{token}', [AdminAuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/reset-password', [AdminAuthController::class, 'resetPassword'])->name('password.update');
 
 Route::prefix('admin')->middleware('auth403')->name('admin.')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
@@ -103,6 +107,7 @@ Route::prefix('admin')->middleware('auth403')->name('admin.')->group(function ()
     Route::get('/reservasi/export', [AdminBookingController::class, 'export'])->middleware('permission:booking.export')->name('bookings.export');
 
     Route::get('/laporan', [ReportController::class, 'index'])->middleware('permission:report.view')->name('reports.index');
+    Route::post('/laporan/pengeluaran-bulanan', [ReportController::class, 'storeMonthlyExpense'])->middleware('permission:report.view')->name('reports.store-monthly-expense');
     Route::get('/laporan/export/pdf', [ReportController::class, 'exportPdf'])->middleware('permission:report.view')->name('reports.export-pdf');
     Route::get('/laporan/export/excel', [ReportController::class, 'exportExcel'])->middleware('permission:report.view')->name('reports.export-excel');
     Route::get('/laporan/print', [ReportController::class, 'print'])->middleware('permission:report.view')->name('reports.print');
@@ -140,9 +145,18 @@ Route::prefix('admin')->middleware('auth403')->name('admin.')->group(function ()
     Route::post('/faq', [AdminFaqController::class, 'store'])->middleware('permission:faq.create')->name('faqs.store');
     Route::delete('/faq/{faq}', [AdminFaqController::class, 'destroy'])->middleware('permission:faq.delete')->name('faqs.destroy');
 
-    Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:setting.view')->name('settings.index');
-    Route::post('/settings', [SettingController::class, 'update'])->middleware('permission:setting.update')->name('settings.update');
-    Route::post('/settings/theme', [SettingController::class, 'updateTheme'])->middleware('permission:setting.update')->name('settings.update-theme');
     Route::get('/jam-operasional', [OperationalHourController::class, 'index'])->middleware('permission:setting.view')->name('operational-hours.index');
     Route::post('/jam-operasional', [OperationalHourController::class, 'update'])->middleware('permission:setting.update')->name('operational-hours.update');
 });
+
+Route::middleware(['auth403', 'permission:setting.view'])
+    ->get('/setting', [SettingController::class, 'index'])
+    ->name('admin.settings.index');
+
+Route::middleware(['auth403', 'permission:setting.update'])
+    ->post('/setting', [SettingController::class, 'update'])
+    ->name('admin.settings.update');
+
+Route::middleware(['auth403', 'permission:setting.update'])
+    ->post('/setting/theme', [SettingController::class, 'updateTheme'])
+    ->name('admin.settings.update-theme');
